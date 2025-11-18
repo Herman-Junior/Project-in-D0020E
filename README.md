@@ -1,15 +1,8 @@
 # Project-in-D0020E 2025/2026
 Integrating Sensor and Audio Data Using a Relational Database System
 ## Project goals and Background
-In engineering systems collecting and managing data from various sensors and devices is essential for monitoring performance detecting patterns and supporting decision making
-Different types of data such as environmental measurements audio recordings and sensor outputs may be generated at the same time but stored separately
-Without an efficient way to organize and relate these datasets valuable insights can be lost
+In engineering systems, collecting and managing data from various sensors and devices is fundamental for monitoring performance, detecting patterns, and supporting decision-making. Different types of data, such as environmental measurements, audio recordings, or sensor outputs, are often generated simultaneously but stored separately. Without an efficient way to organize and relate these datasets, valuable insights can be easily lost. This project focuses on designing and implementing a database system capable of storing, organizing, and linking heterogeneous data sources. The data will include audio recordings, measurements from a weather station such as temperature, wind speed, and air pressure, as well as humidity sensor readings.
 
-This project focuses on designing and implementing a database system capable of storing organizing and linking heterogeneous data sources
-The data includes audio recordings measurements from a weather station such as temperature wind speed and air pressure and humidity sensor readings
+**The primary goals** are to design the EER diagram of the database, manage different types of data including audio files and sensor data, define and manage relationships between datasets such as linking a specific audio recording to environmental conditions measured at the same time, query and download selected data based on custom filters or time intervals, and document the implementation process, challenges, and insights from the experiments.
 
-The main goals are to design the EER diagram manage audio and sensor data relate datasets captured at the same time enable queries and downloads based on time or filters and document the full implementation process
-
-A key example is retrieving humidity and weather information for the exact time period when an audio file was recorded
-This requires a suitable database schema user interfaces and consistent linking between related datasets.
-
+For example, a user should be able to retrieve all humidity and weather parameters corresponding to the exact period when a specific audio file was recorded. This will require designing a suitable database schema, developing interfaces for data interaction, and ensuring consistency between related datasets.
