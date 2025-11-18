@@ -1,0 +1,17 @@
+Create DATABASE Weather_Db;
+Use Weather_Db;
+
+Create TABLE SENSORS
+(
+Date CHAR(10),
+TID CHAR(10),
+LUFTTEMPERATUR Double,
+KVALITE Text
+);
+Select * From SENSORS;
+
+
+Select * From SENSORS;
+
+DROP TABLE SENSORS;
+DROP TABLE AUDIO;
