@@ -1,6 +1,17 @@
+import pymysql
 from flask import Flask, render_template
 
 app = Flask(__name__)
+
+# Database connection
+conn = pymysql.connect(
+    host='localhost',
+    user='root',
+    password='123',
+    database='Database'
+)
+cursor = conn.cursor()
+
 
 # Define a route for the root URL ('/')
 @app.route('/')
