@@ -11,7 +11,8 @@ For example, a user should be able to retrieve all humidity and weather paramete
 The hardware and software requirements for the project include two Raspberry Pi boards and a Vantage PRO 2 weather station. However, the physical hardware setup is not required to be implemented, and the outdoor setup can be ignored. These components represent the real-world environment where data would normally be collected, but for this project, pre-recorded or simulated data provided in CSV format will be used instead.
 Each CSV file could contain representative data such as:
 
-humidity, temperature, timestamp
+humidity, temperature, timestamp...
+
 2.1, 20.5, 1762180897
 2.1, 20.5, 1762180898
 2.1, 20.5, 1762180899
