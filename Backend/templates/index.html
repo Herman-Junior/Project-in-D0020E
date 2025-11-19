@@ -1,12 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multi-Sensor Data Manager</title>
 </head>
 <body>
-    <h1>Data from the Database</h1>
-    <p>{{ data }}</p>  <!-- Use the 'data' variable in the template -->
+    <h1>Latest Sensor Readings (from Weather_Db)</h1>
+    
+    {% if sensor_data %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Timestamp</th>
+                    <th>Temperature (°C)</th>
+                    <th>Humidity (%)</th>
+                    <th>Quality</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in sensor_data %}
+                <tr>
+                    <td>{{ record.id }}</td>
+                    <td>{{ record.timestamp }}</td>
+                    <td>{{ record.temperature }}</td>
+                    <td>{{ record.humidity }}</td>
+                    <td>{{ record.quality }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No sensor data found or an error occurred.</p>
+    {% endif %}
 </body>
 </html>
