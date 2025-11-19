@@ -10,7 +10,7 @@ CREATE TABLE AudioRecording (
     file_path TEXT NOT NULL
 );
 
--- Weather station table
+-- WeatherDATA table
 CREATE TABLE WeatherDATA (
     id INT AUTO_INCREMENT PRIMARY KEY,
     `date` DATE,
@@ -25,7 +25,7 @@ CREATE TABLE WeatherDATA (
     rain_rate DOUBLE
 );
 
--- Sensor table (humidity + temperature)
+-- Sensors table (humidity + temperature)
 CREATE TABLE Sensors (
     id INT AUTO_INCREMENT PRIMARY KEY,
     `date` DATE,
@@ -35,11 +35,20 @@ CREATE TABLE Sensors (
     quality TEXT
 );
 
+-- Linking tables for relationships between Audio, Weather, and Sensors
+CREATE TABLE AUDIOENV_LINK (
+    audio_id INT,
+    weather_id INT,
+    Sensors_id INT,
+    Foreign Key (Audio_id) REFERENCES AudioRecording(id),
+    Foreign Key (weather_id) REFERENCES WeatherDATA(id),
+    Foreign Key (Sensors_id) REFERENCES Sensors(id)
+);
 
 -- Sample data
 INSERT INTO AudioRecording (`date`, start_time, end_time, file_path)
 VALUES
-('2023-10-01', '2023-10-01 12:00:00', '2023-10-01 12:05:00', 'C:\\Users\\Simon Tesfai\\Music\\PioneerDJ\\Sampler\\MERGE FX.wav'),
+('2023-10-01', '2023-10-01 12:00:00', '2023-10-01 12:05:00', '/recordings/audio2.wav'),
 ('2023-10-01', '2023-10-01 13:00:00', '2023-10-01 13:05:00', '/recordings/audio2.wav'),
 ('2023-10-01', '2023-10-01 14:00:00', '2023-10-01 14:05:00', '/recordings/audio3.wav');
 
@@ -54,3 +63,6 @@ VALUES
 ('2023-10-01', '2023-10-01 12:00:00', 25.5, 60.0, 'Good'),
 ('2023-10-01', '2023-10-01 13:00:00', 26.0, 58.0, 'Moderate'),
 ('2023-10-01', '2023-10-01 14:00:00', 27.5, 55.0, 'Good');
+
+INSERT INTO AUDIOENV_LINK (audio_id, weather_id, sensors_id)
+VALUES (1, 1, 1);
