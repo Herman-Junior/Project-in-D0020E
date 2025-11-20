@@ -28,3 +28,7 @@ Second, the database framework and codebase should provide modular scripts for t
 Third, a benchmarking and analysis report should describe how the system can run on any computer, specify where audio files are stored, and explain that audio files should be referenced by file paths rather than stored directly in the database. It should also address special cases such as missing audio data associated with certain measurements and multiple audio recordings of different durations, including filtering or prioritizing relevant files within a specific duration range.
 
 Additionally, the report should explore how the entire system could be deployed online. Fourth, a demonstration and presentation should be prepared as defined by the D0020E course. Finally, a comprehensive project report should also be delivered according to the course requirements.
+
+# To Run:
+- Have flask, MySQL, pymysql packages installed.
+- From folder run: python -m backend.app
