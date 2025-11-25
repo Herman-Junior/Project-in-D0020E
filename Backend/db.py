@@ -1,5 +1,6 @@
 # backend/db.py
 import pymysql
+
 import datetime # Needed for UNIX timestamp conversion
 
 # Centralized configuration for MySQL database
