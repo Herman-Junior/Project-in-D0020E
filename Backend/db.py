@@ -1,7 +1,9 @@
 # backend/db.py
 import pymysql
+import pymysql.cursors
+import datetime # Needed for UNIX timestamp conversion
 
-# Centralized configuration for your MySQL database
+# Centralized configuration for MySQL database
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
@@ -9,14 +11,128 @@ DB_CONFIG = {
     'database': 'Weather_Db'
 }
 
-def get_db_connection():
+def get_db_connection(dict_cursor=False):
+    """
+    Establishes a new database connection using the centralized config.
+    If dict_cursor is True, returns a connection that produces results as dictionaries.
+    """
+    try:
+        cursor_type = pymysql.cursors.DictCursor if dict_cursor else pymysql.cursors.Cursor
+        return pymysql.connect(**DB_CONFIG, cursorclass=cursor_type)
+    except Exception as e:
+        print(f"ERROR: Could not connect to the database. Details: {e}")
+        return None
+
+# ------------------ Sensor Data Insertion ------------------ #
+def insert_sensor_data(data_row):
     """
-    Establishes a new database connection using the centralized config.
+    Inserts a single row of sensor data into the SENSOR_DATA table.
+    Targets the columns: date, timestamp, and moisture.
+    
+    :param data_row: Dictionary containing 'moisture' and 'timestamp' (Unix epoch).
+    :return: Tuple (success_boolean, message_or_last_insert_id)
     """
+    conn = None
     try:
-        # ** unpacks the dictionary into keyword arguments
-        return pymysql.connect(**DB_CONFIG)
+        conn = get_db_connection()
+        if not conn:
+            return False, "Database connection failed."
+
+        cursor = conn.cursor()
+        
+        # --- Handle Timestamp Conversion ---
+        timestamp_value = data_row.get('timestamp')
+        date_value = None 
+        
+        # Only change if it's a UNIX timestamp (int or float)
+        if isinstance(timestamp_value, (int, float)):
+            dt_object = datetime.datetime.fromtimestamp(timestamp_value)
+            # Format to MySQL DATETIME
+            timestamp_value = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+            # Extract date part for the 'Date' column
+            date_value = dt_object.strftime('%Y-%m-%d')
+
+        # SQL Query 
+        query = """
+            INSERT INTO SENSOR_DATA (`date`, timestamp, moisture)
+            VALUES (%s, %s, %s)
+        """
+
+        # Prepare Values
+        values = (   
+            date_value, 
+            timestamp_value,          
+            data_row.get('moisture', None),                               
+        )
+        
+        cursor.execute(query, values)
+        conn.commit()
+        
+        # Returns True and the ID of the new row.
+        return True, cursor.lastrowid
+        
     except Exception as e:
-        # In a real application, you might use Flask's logging here
-        print(f"ERROR: Could not connect to the database. Details: {e}")
-        return None
+        # Log the detailed error
+        print(f"Sensor Data Insertion Error: {e}")
+        return False, f"Insertion failed: {e}"
+        
+    finally:
+        # Ensures the connection is closed
+        if conn:
+            conn.close()
+
+def insert_weather_data(data_row):
+    conn = None
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False, "Database connection failed."
+        
+        cursor = conn.cursor()
+
+        # Handle Timestamp Conversion
+        timestamp_value = data_row.get('timestamp')
+        data_value = None
+
+        if isinstance(timestamp_value, (int, float)):
+            dt_object = datetime.datetime.fromtimestamp(timestamp_value)
+            # Format to MySQL DATETIME
+            timestamp_value = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+            # Extract date part for the 'Date' column
+            date_value = dt_object.strftime('%Y-%m-%d')
+        # If timestamp is a string, it is assumed to be in correct DATETIME format.
+
+        # SQL Query
+        query = """
+            INSERT INTO weather_data (`date`, timestamp, in_temperature, out_temperature, 
+                                      in_humidity, out_humidity, wind_speed, 
+                                      wind_direction, daily_rain, rain_rate)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        
+        # Prepare Values (Using .get() ensures missing keys default to None/NULL)
+        values = (
+            date_value,                                           # date
+            timestamp_value,                                      # timestamp
+            data_row.get('in_temperature', None),                 # in_temperature
+            data_row.get('out_temperature', None),                # out_temperature
+            data_row.get('in_humidity', None),                    # in_humidity
+            data_row.get('out_humidity', None),                   # out_humidity
+            data_row.get('wind_speed', None),                     # wind_speed
+            data_row.get('wind_direction', None),                 # wind_direction
+            data_row.get('daily_rain', None),                     # daily_rain
+            data_row.get('rain_rate', None)                       # rain_rate
+        )
+
+        cursor.execute(query, values)
+        conn.commit()
+        
+        return True, cursor.lastrowid
+        
+    except Exception as e:
+        print(f"Weather Data Insertion Error: {e}")
+        return False, f"Insertion failed: {e}"
+        
+    finally:
+        if conn:
+            conn.close()
