@@ -1,7 +1,7 @@
 # backend/routes.py
 from flask import render_template
 # Import the database function from the local db module
-from .db import get_db_connection 
+from db import get_db_connection 
 import pymysql.cursors
 
 def get_latest_sensor_data(limit=5):

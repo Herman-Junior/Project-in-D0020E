@@ -12,16 +12,12 @@ DB_CONFIG = {
 }
 
 def get_db_connection(dict_cursor=False):
-    """
-    Establishes a new database connection using the centralized config.
-    If dict_cursor is True, returns a connection that produces results as dictionaries.
-    """
-    try:
+    try:
         cursor_type = pymysql.cursors.DictCursor if dict_cursor else pymysql.cursors.Cursor
-        return pymysql.connect(**DB_CONFIG, cursorclass=cursor_type)
-    except Exception as e:
-        print(f"ERROR: Could not connect to the database. Details: {e}")
-        return None
+        return pymysql.connect(**DB_CONFIG, cursorclass=cursor_type)
+    except Exception as e:
+        print(f"ERROR: Could not connect to the database. Details: {e}")
+        return None
 
 # ------------------ Sensor Data Insertion ------------------ #
 def insert_sensor_data(data_row):
@@ -59,10 +55,10 @@ def insert_sensor_data(data_row):
         """
 
         # Prepare Values
-        values = (   
+        values = ( 
             date_value, 
-            timestamp_value,          
-            data_row.get('moisture', None),                               
+            timestamp_value, 
+            data_row.get('moisture', None),
         )
         
         cursor.execute(query, values)

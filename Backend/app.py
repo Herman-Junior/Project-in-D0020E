@@ -1,7 +1,7 @@
 # backend/app.py
 from flask import Flask
 # Import the route handler from the local routes module
-from .routes import index
+from routes import index
 
 app = Flask(__name__)
 
