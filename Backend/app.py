@@ -1,13 +1,19 @@
-# backend/app.py
+#backend/app.py
+
 from flask import Flask
-# Import the route handler from the local routes module
-from routes import index
+# Import the route handlers (index, get_sensor_api, and get_weather_api)
+from routes import index, get_sensor_api, get_weather_api 
 
 app = Flask(__name__)
 
 # Register the routes with the application
-# When a user visits '/', the index function from routes.py is executed.
+# The root URL serves the static HTML file
 app.add_url_rule('/', 'index', index)
+
+# Register the two distinct API endpoints
+# Note: I'm using the common v1 prefix in the URL for versioning (e.g., /api/v1/sensors)
+app.add_url_rule('/api/v1/sensors', 'get_sensor_api', get_sensor_api)
+app.add_url_rule('/api/v1/weather', 'get_weather_api', get_weather_api) 
 
 if __name__ == '__main__':
     # Run the Flask application
