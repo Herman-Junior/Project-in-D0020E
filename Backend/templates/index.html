@@ -29,12 +29,11 @@
             border-radius: 4px;
             cursor: pointer;
             margin-top: 10px;
-            margin-right: 10px;
         }
         button:hover {
             background-color: #0056b3;
         }
-        
+
         /* --- Upload Styles --- */
         .upload-container {
             border: 2px solid #ccc;
@@ -47,7 +46,7 @@
             margin-top: 15px;
             padding: 10px;
             border-radius: 4px;
-            white-space: pre-wrap;
+            white-space: pre-wrap; /* Preserve formatting of the output */
             font-family: 'Courier New', monospace;
             font-size: 0.9em;
         }
@@ -73,7 +72,6 @@
             padding: 10px;
             border: 1px solid #ddd;
             overflow-x: auto;
-            max-height: 400px;
         }
         .api-section {
             margin-bottom: 20px;
@@ -86,7 +84,7 @@
 
         <div class="upload-container">
             <h2>📤 Upload CSV Data</h2>
-            <p>Upload a CSV file (Sensor data requires 2 columns, Weather requires 9 columns).</p>
+            <p>Use this form to upload and process a CSV file for either **Sensor** (2 columns) or **Weather** (9 columns) data.</p>
             <form id="uploadForm">
                 <label for="csvFile">Choose CSV File:</label>
                 <input type="file" id="csvFile" name="file" accept=".csv" required>
@@ -102,15 +100,15 @@
             <p>Click the buttons below to test the data retrieval endpoints and see the raw JSON output.</p>
 
             <div class="api-section">
-                <h3>Sensor Data (`/api/v1/sensors`) - (Date, Time, Moisture)</h3>
+                <h3>Sensor Data (`/api/v1/sensors`)</h3>
                 <button onclick="fetchApiData('/api/v1/sensors', 'sensorDataOutput')">Get Latest Sensor Data</button>
-                <pre id="sensorDataOutput">Click the button to load data...</pre>
+                <pre id="sensorDataOutput"></pre>
             </div>
 
             <div class="api-section">
                 <h3>Weather Data (`/api/v1/weather`)</h3>
                 <button onclick="fetchApiData('/api/v1/weather', 'weatherDataOutput')">Get Latest Weather Data</button>
-                <pre id="weatherDataOutput">Click the button to load data...</pre>
+                <pre id="weatherDataOutput"></pre>
             </div>
         </div>
     </div>
@@ -148,7 +146,7 @@
                 if (response.ok && result.status === 'completed') {
                     resultDiv.className = 'upload-result success';
                     resultDiv.textContent = `
-Upload Successful!
+Upload Successful! (Type: ${file.name.includes('weather') ? 'Weather' : 'Sensor'})
 Status: ${result.status}
 Success Count: ${result.success_count}
 Failed Count: ${result.fail_count}
