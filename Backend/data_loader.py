@@ -16,61 +16,80 @@ def process_csv_file(filepath):
         return {"status": "error", "message": "File not found"}
 
     try:
-        # 1. Open file (Inspiration: "with open(filename, 'r') as csvfile:")
-        with open(filepath, mode='r', encoding='utf-8') as csvfile:
+        # 1. Open file and sniff dialect (delimiter detection)
+        with open(filepath, mode='r', encoding='utf-8-sig') as csvfile:
             
-            # 2. Create Reader (Inspiration: "csvreader = csv.reader(csvfile)")
-            # We add logic to detect comma vs semicolon
+            # Use Sniffer to detect the delimiter (comma or semicolon)
             try:
                 sample = csvfile.read(1024)
                 csvfile.seek(0)
+                # Sniffer and DictReader handle header reading and mapping
                 dialect = csv.Sniffer().sniff(sample, delimiters=',;')
-                csvreader = csv.reader(csvfile, dialect=dialect)
-            except:
-                csvfile.seek(0)
-                csvreader = csv.reader(csvfile)
-
-            # 3. Read Header (Inspiration: "fields = next(csvreader)")
-            try:
-                fields = next(csvreader)
-                # "Vilken typ": We check the type based on column count
-                col_count = len(fields)
-                print(f"Detected columns: {col_count}")
-            except StopIteration:
-                return {"status": "error", "message": "Empty file"}
-
-            # 4. Check Type Logic
-            # "2 mer än två anrops en weather" (If > 2 columns, call Weather)
-            if col_count > 2:
-                target_keys = WEATHER_KEYS
-                insert_func = db.insert_weather_data
-            
-            # "3 mindre än 2 rows (columns) anropa sensor" (If 2 columns, call Sensor)
-            else:
-                target_keys = SENSOR_KEYS
-                insert_func = db.insert_sensor_data
-
-            # 5. Loop rows (Inspiration: "for row in csvreader:")
-            for row in csvreader:
-                # Basic cleaning
-                clean_row = [x.strip() for x in row]
+                csvreader = csv.DictReader(csvfile, dialect=dialect)
                 
-                # Make sure row matches header size
-                if len(clean_row) != col_count:
-                    fail_count += 1
-                    continue
+                fields = csvreader.fieldnames
+                col_count = len(fields)
+                
+            except Exception as e:
+                # Fallback for empty file or complex header errors
+                return {"status": "error", "message": f"Could not read CSV header or dialect: {e}"}
 
-                # Convert List to Dictionary
-                data_dict = dict(zip(target_keys, clean_row))
+
+            # 2. Determine Insertion Function
+            if col_count > 2:
+                # WEATHER DATA
+                insert_func = db.insert_weather_data
+            elif col_count == 2:
+                # SENSOR DATA
+                insert_func = db.insert_sensor_data
+            else:
+                return {"status": "error", "message": f"Unsupported column count: {col_count}"}
+
+
+            # 3. Loop Rows, Convert, and Insert
+            for data_dict in csvreader:
+                
+                # Basic cleaning (strip whitespace from keys and values)
+                data_dict = {k.strip(): v.strip() for k, v in data_dict.items() if k is not None}
                 
                 # Convert Types & Insert
                 try:
-                    data_dict['timestamp'] = int(float(data_dict['timestamp']))
                     
-                    # Simple conversion for other fields
-                    for k in data_dict:
-                        if k != 'timestamp':
-                            data_dict[k] = float(data_dict[k])
+                    # --- CRITICAL: TIMESTAMP CONVERSION ---
+                    timestamp_raw = data_dict.get('timestamp')
+                    if timestamp_raw:
+                        # Convert to number (float) first. db.py will handle the datetime object conversion.
+                        data_dict['timestamp'] = float(timestamp_raw)
+                    else:
+                        # If timestamp is missing/empty, this row MUST be rejected 
+                        # to prevent the 'timestamp cannot be null' error.
+                        raise ValueError("Timestamp value is empty or missing.")
+                    
+                    # --- NUMERIC FIELD CONVERSION ---
+                    STRING_KEYS = ['wind_direction'] 
+                    
+                    for k, v in data_dict.items():
+                        
+                        key_lower = k.lower() 
+                        
+                        # 1. Skip if value is empty or None
+                        if not v:
+                            continue
+                            
+                        # 2. Skip the timestamp (already converted)
+                        if key_lower == 'timestamp':
+                            continue
+                            
+                        # 3. Skip explicitly defined string fields (FIX for wind_direction)
+                        if key_lower in STRING_KEYS:
+                            continue
+                        
+                        # All remaining fields are expected to be numbers; try conversion
+                        try:
+                            data_dict[k] = float(v)
+                        except ValueError:
+                            # Catch non-numeric strings (like 'N/A', '--')
+                            raise ValueError(f"Data conversion failed for column '{k}' with value '{v}'.")
 
                     # Call the chosen function
                     result, msg = insert_func(data_dict)
@@ -78,8 +97,10 @@ def process_csv_file(filepath):
                         success_count += 1
                     else:
                         fail_count += 1
+                
                 except Exception as e:
-                    print(f"Row failed: {e}")
+                    # Catch and log specific row errors (invalid timestamp, failed float conversion)
+                    print(f"Row failed insertion/conversion: {e}. Row data: {data_dict}")
                     fail_count += 1
 
         return {

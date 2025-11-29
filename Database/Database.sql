@@ -22,16 +22,21 @@ CREATE TABLE audiorecording (
 );
 
 -- 4. Define weather_data table (lowercase, as used in Python query)
-CREATE TABLE weather_data (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    `date` DATE,
-    timestamp DATETIME NOT NULL,
-    in_temperature DOUBLE,
+CREATE TABLE WEATHER_DATA ( id INT AUTO_INCREMENT PRIMARY KEY,
+
+-- Full DATETIME (for indexing/logging)
+`timestamp` DATETIME NOT NULL,
+
+-- Separated components (for easy searching/retrieval)
+`date` DATE, `time` TIME,
+
+-- Measurement variables (all lowercase)
+in_temperature DOUBLE,
     out_temperature DOUBLE,
-    in_humidity DOUBLE,
-    out_humidity DOUBLE,
+    in_humidity INT,
+    out_humidity INT,
     wind_speed DOUBLE,
-    wind_direction TEXT,
+    wind_direction VARCHAR(10), -- e.g., 'N', 'SW'
     daily_rain DOUBLE,
     rain_rate DOUBLE
 );

@@ -31,9 +31,22 @@ def get_latest_sensor_data(start_date=None, end_date=None, limit=50):
         
         conditions = []
         params = []
-        
-        # ... (Filtering logic remains the same) ...
-        
+
+        # THIS IS REDUNDANT CODE PACK INTO A FUNCTION LATER!!!!!!
+        if start_date:
+            # Filter by date part of the main timestamp column
+            conditions.append("DATE(`timestamp`) >= %s") 
+            params.append(start_date)
+                
+        if end_date:
+            conditions.append("DATE(`timestamp`) <= %s")
+            params.append(end_date)
+                    
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+                
+        query += f" ORDER BY `timestamp` DESC LIMIT {limit}"
+
         # Execution
         cursor.execute(query, params)
         raw_data = cursor.fetchall()
@@ -82,9 +95,11 @@ def get_sensor_api():
 # --- WEATHER DATA FUNCTIONS --- #
 
 def get_latest_weather_data(start_date=None, end_date=None, limit=50):
-    """Retrieves weather_data, optionally filtered by date range."""
+    """
+    Retrieves WEATHER_DATA, handling date/time formatting and serialization issues.
+    It selects all detailed weather metrics along with the date and time.
+    """
     conn = None
-    data = []
     
     try:
         conn = get_db_connection(dict_cursor=True)
@@ -92,27 +107,56 @@ def get_latest_weather_data(start_date=None, end_date=None, limit=50):
             
         cursor = conn.cursor() 
         
-        query = "SELECT `id`, `date`, TIME(`timestamp`) AS `timestamp`, `out_temperature`, `out_humidity`, `wind_direction` FROM `weather_data`"
+        # 1. SQL Query: Selects all columns, explicitly aliasing date and time
+        query = """
+            SELECT 
+                DATE(`timestamp`) AS `date`, 
+                TIME(`timestamp`) AS `time`,
+                in_temperature, out_temperature, 
+                in_humidity, out_humidity, wind_speed, 
+                wind_direction, daily_rain, rain_rate
+            FROM `WEATHER_DATA`
+        """
+        
         conditions = []
         params = []
         
-        # Filtering for weather_data uses the existing 'date' column
+        # 2. Filtering Logic (Using the main DATETIME column for consistency)
         if start_date:
-            conditions.append("`date` >= %s")
+            conditions.append("DATE(`timestamp`) >= %s")
             params.append(start_date)
         
         if end_date:
-            conditions.append("`date` <= %s")
+            conditions.append("DATE(`timestamp`) <= %s")
             params.append(end_date)
             
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
         
         query += f" ORDER BY `timestamp` DESC LIMIT {limit}"
-        
+
+        # Execution
         cursor.execute(query, params)
-        data = cursor.fetchall()
-    
+        raw_data = cursor.fetchall()
+        
+        # 3. POST-FETCH CONVERSION: Ensures all values are JSON-serializable strings
+        data = []
+        for row in raw_data:
+            
+            # Fix 'date' formatting (YYYY-MM-DD)
+            if isinstance(row.get('date'), datetime.date):
+                row['date'] = row['date'].strftime('%Y-%m-%d')
+            
+            # Fix 'time' timedelta object (HH:MM:SS)
+            if isinstance(row.get('time'), datetime.timedelta):
+                total_seconds = int(row['time'].total_seconds())
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
+                row['time'] = f"{hours:02}:{minutes:02}:{seconds:02}"
+                
+            data.append(row)
+
     except Exception as e:
         print(f"Weather Database Query Error: {e}")
         data = [{'error': f"Failed to load weather data: {e}"}]
