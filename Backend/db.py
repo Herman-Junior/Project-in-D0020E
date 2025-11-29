@@ -20,6 +20,7 @@ def get_db_connection(dict_cursor=False):
         return None
 
 # ------------------ Sensor Data Insertion ------------------ #
+
 def insert_sensor_data(data_row):
     """
     Inserts a single row of sensor data into the SENSOR_DATA table.
@@ -36,7 +37,7 @@ def insert_sensor_data(data_row):
 
         cursor = conn.cursor()
         
-        # --- Handle Timestamp Conversion ---
+        # --- Handle Timestamp Conversion --- #
         timestamp_value = data_row.get('timestamp')
         date_value = None 
         
