@@ -10,7 +10,7 @@ app = Flask(__name__)
 # The root URL serves the static HTML file
 app.add_url_rule('/', 'index', index)
 
-# Register the two distinct API endpoints
+# Register the distinct API endpoints
 # Note: using the v1 prefix in the URL for versioning (e.g., /api/v1/sensors)
 app.add_url_rule('/api/v1/sensors', 'get_sensor_api', get_sensor_api)
 app.add_url_rule('/api/v1/weather', 'get_weather_api', get_weather_api) 
