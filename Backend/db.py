@@ -47,18 +47,20 @@ def insert_sensor_data(data_row):
             timestamp_value = dt_object.strftime('%Y-%m-%d %H:%M:%S')
             # Extract date part for the 'Date' column
             date_value = dt_object.strftime('%Y-%m-%d')
+            time_value = dt_object.strftime('%H:%M:%S')
 
         # SQL Query 
         query = """
-            INSERT INTO SENSOR_DATA (`date`, timestamp, moisture)
-            VALUES (%s, %s, %s)
+            INSERT INTO SENSOR_DATA (`timestamp`, `date`, `time`, `Moisture`)
+            VALUES (%s, %s, %s, %s)
         """
 
-        # Prepare Values
+        # Prepare Values (Must match the order of columns in the query)
         values = ( 
-            date_value, 
-            timestamp_value, 
-            data_row.get('moisture', None),
+            timestamp_value,
+            date_value,             
+            time_value,          
+            data_row.get('moisture'),  # 3. Moisture (float/int)
         )
         
         cursor.execute(query, values)
@@ -76,6 +78,7 @@ def insert_sensor_data(data_row):
         # Ensures the connection is closed
         if conn:
             conn.close()
+
 
 def insert_weather_data(data_row):
     conn = None
