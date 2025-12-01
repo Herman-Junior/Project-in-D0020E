@@ -4,7 +4,7 @@ import json
 import db 
 
 # --- DEFINED FIELD MAPPINGS ---
-SENSOR_FIELDS = ['timestamp', 'moisture']
+SENSOR_FIELDS = ['moisture', 'timestamp']
 WEATHER_FIELDS = [
     'timestamp', 'in_temperature', 'out_temperature', 'in_humidity', 
     'out_humidity', 'wind_speed', 'wind_direction', 'daily_rain', 'rain_rate'
@@ -27,7 +27,7 @@ def process_csv_file(filepath):
 
     try:
         # Use csv.Sniffer to handle potential semicolon or comma delimiters
-        with open(filepath, mode='r', encoding='utf-8') as csvfile:
+        with open(filepath, mode='r', encoding='utf-8-sig') as csvfile:
             
             try:
                 sample = csvfile.read(1024)
