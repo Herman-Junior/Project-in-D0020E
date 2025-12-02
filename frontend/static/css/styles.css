@@ -61,7 +61,7 @@ body{
   }
 }
 
-#sidebar a, #sidebar .dropdown-btn, #sidebar .logo{
+#sidebar a, #sidebar .logo{
   border-radius: .5em;
   padding: .85em;
   text-decoration: none;
@@ -70,22 +70,14 @@ body{
   align-items: center;
   gap: 1em;
 }
-.dropdown-btn{
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  font: inherit;
-  cursor: pointer;
-}
 #sidebar svg{
   flex-shrink: 0;
   fill: var(--text-clr);
 }
-#sidebar a span, #sidebar .dropdown-btn span{
+#sidebar a span{
   flex-grow: 1;
 }
-#sidebar a:hover, #sidebar .dropdown-btn:hover{
+#sidebar a:hover{
   background-color: var(--hover-clr);
 }
 #sidebar .sub-menu{
@@ -99,9 +91,6 @@ body{
 }
 #sidebar .sub-menu.show{
   grid-template-rows: 1fr;
-}
-.dropdown-btn svg{
-  transition: 200ms ease;
 }
 .rotate svg:last-child{
   rotate: 180deg;
@@ -174,15 +163,8 @@ main p{
     ul li{
       height: 100%;
     }
-    ul a, ul .dropdown-btn{
-      width: 60px;
-      height: 60px;
-      padding: 0;
-      border-radius: 0;
-      justify-content: center;
-    }
 
-    ul li span, ul li:first-child, .dropdown-btn svg:last-child{
+    ul li span, ul li:first-child{
       display: none;
     }
 
