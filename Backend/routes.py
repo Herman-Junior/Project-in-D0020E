@@ -1,4 +1,4 @@
-from flask import jsonify, request, send_from_directory
+from flask import jsonify, render_template, request, send_from_directory
 from db import get_db_connection 
 from data_loader import process_csv_file
 import pymysql.cursors
@@ -222,11 +222,5 @@ def upload_csv_file():
     return jsonify({"status": "error", "message": "Unknown error during upload"}), 500
 
 # Serves the static client-side HTML file
-def index():
-    # Get the absolute path to the directory containing routes.py (the 'backend' folder)
-    root_dir = os.path.abspath(os.path.dirname(__file__))
-    
-    template_dir = os.path.join(root_dir, 'templates')
-    
-    # Tell Flask to look in the 'templates' directory for 'index.html'
-    return send_from_directory(template_dir, 'index.html')
+def index():    
+    return render_template('index.html')

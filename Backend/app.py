@@ -15,6 +15,7 @@ app = Flask(__name__,
             template_folder=FRONTEND_PATH,
             static_folder=STATIC_PATH)
 
+
 # Register the routes with the application
 # The root URL serves the static HTML file
 app.add_url_rule('/', 'index', index)
