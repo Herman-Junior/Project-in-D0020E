@@ -1,10 +1,19 @@
 #backend/app.py
 
 from flask import Flask
+import os
 # Import the route handlers (index, get_sensor_api, and get_weather_api)
 from routes import index, get_sensor_api, get_weather_api, upload_csv_file
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+
+FRONTEND_PATH = os.path.join(PROJECT_ROOT, 'frontend')
+STATIC_PATH = os.path.join(FRONTEND_PATH, 'static')
+
+app = Flask(__name__, 
+            template_folder=FRONTEND_PATH,
+            static_folder=STATIC_PATH)
 
 # Register the routes with the application
 # The root URL serves the static HTML file
