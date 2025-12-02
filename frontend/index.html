@@ -1,190 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en">    
+<head> 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather & Sensor Data Interface</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-        h1, h2 {
-            color: #333;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        button {
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        /* --- Upload Styles --- */
-        .upload-container {
-            border: 2px solid #ccc;
-            padding: 20px;
-            margin-top: 20px;
-            border-radius: 8px;
-            max-width: 400px;
-        }
-        .upload-result {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 4px;
-            white-space: pre-wrap; /* Preserve formatting of the output */
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-        .success { 
-            background-color: #d4edda; 
-            color: #155724; 
-            border: 1px solid #c3e6cb; 
-        }
-        .error { 
-            background-color: #f8d7da; 
-            color: #721c24; 
-            border: 1px solid #f5c6cb; 
-        }
-        
-        /* --- API Test Styles --- */
-        .api-test-container {
-            margin-top: 30px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-        }
-        pre {
-            background-color: #f8f8f8;
-            padding: 10px;
-            border: 1px solid #ddd;
-            overflow-x: auto;
-        }
-        .api-section {
-            margin-bottom: 20px;
-        }
-    </style>
+    <title>Database Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script type="text/javascript" src="{{ url_for('static', filename='scripts/button.js') }}" defer></script>
 </head>
+
 <body>
+  <nav id="sidebar">
+    <ul>
+      <li>
+        <span class="logo">DB Manager</span>
+        <button onclick=toggleSidebar() id="toggle-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="m313-480 155 156q11 11 11.5 27.5T468-268q-11 11-28 11t-28-11L228-452q-6-6-8.5-13t-2.5-15q0-8 2.5-15t8.5-13l184-184q11-11 27.5-11.5T468-692q11 11 11 28t-11 28L313-480Zm264 0 155 156q11 11 11.5 27.5T732-268q-11 11-28 11t-28-11L492-452q-6-6-8.5-13t-2.5-15q0-8 2.5-15t8.5-13l184-184q11-11 27.5-11.5T732-692q11 11 11 28t-11 28L577-480Z"/></svg>
+        </button>
+      <li>
+        <a href="lookup.html">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M472-120q-73-1-137.5-13.5t-112-34Q175-189 147.5-218T120-280q0 33 27.5 62t75 50.5q47.5 21.5 112 34T472-120Zm-71-204q-30-3-58-8t-53.5-12q-25.5-7-48-15.5T200-379q19 11 41.5 19.5t48 15.5q25.5 7 53.5 12t58 8Zm79-275q86 0 177.5-26T760-679q-11-29-100.5-55T480-760q-91 0-178.5 25.5T200-679q15 29 104.5 54.5T480-599Zm-61 396q10 23 23 44t30 39q-73-1-137.5-13.5t-112-34Q175-189 147.5-218T120-280v-400q0-33 28.5-62t77.5-51q49-22 114.5-34.5T480-840q74 0 139.5 12.5T734-793q49 22 77.5 51t28.5 62q0 33-28.5 62T734-567q-49 22-114.5 34.5T480-520q-85 0-157-15t-123-44v101q40 37 100 54t121 22q-8 15-13 34.5t-7 43.5q-60-7-111.5-20T200-379v99q14 25 77 47t142 30ZM864-40 756-148q-22 13-46 20.5t-50 7.5q-75 0-127.5-52.5T480-300q0-75 52.5-127.5T660-480q75 0 127.5 52.5T840-300q0 26-7.5 50T812-204L920-96l-56 56ZM660-200q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Z"/></svg>
+          <span>Lookup Data</span>
+        </a>
+      </li>
+      <li>
+        <a href="upload.html">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M440-200h80v-167l64 64 56-57-160-160-160 160 57 56 63-63v167ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>
+          <span>Upload Data</span>
+        </a>
+      </li>
+      <li>
+        <a href="profile.html">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-240v-32q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v32q0 33-23.5 56.5T720-160H240q-33 0-56.5-23.5T160-240Zm80 0h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z"/></svg>
+          <span>testing</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <main>
     <div class="container">
-        <h1>🌱 Environment Data Dashboard Mockup</h1>
-
-        <div class="upload-container">
-            <h2>📤 Upload CSV Data</h2>
-            <p>Use this form to upload and process a CSV file for either **Sensor** (2 columns) or **Weather** (9 columns) data.</p>
-            <form id="uploadForm">
-                <label for="csvFile">Choose CSV File:</label>
-                <input type="file" id="csvFile" name="file" accept=".csv" required>
-                <button type="submit">Upload and Process</button>
-            </form>
-            <div id="uploadResult" class="upload-result"></div>
-        </div>
-        
-        <hr/>
-
-        <div class="api-test-container">
-            <h2>🔍 API Test Endpoints</h2>
-            <p>Click the buttons below to test the data retrieval endpoints and see the raw JSON output.</p>
-
-            <div class="api-section">
-                <h3>Sensor Data (`/api/v1/sensors`)</h3>
-                <button onclick="fetchApiData('/api/v1/sensors', 'sensorDataOutput')">Get Latest Sensor Data</button>
-                <pre id="sensorDataOutput"></pre>
-            </div>
-
-            <div class="api-section">
-                <h3>Weather Data (`/api/v1/weather`)</h3>
-                <button onclick="fetchApiData('/api/v1/weather', 'weatherDataOutput')">Get Latest Weather Data</button>
-                <pre id="weatherDataOutput"></pre>
-            </div>
-        </div>
+      <h2>Hello World</h2>
+      <p>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Veritatis porro iure quaerat aliquam! Optio dolorum in eum provident, facilis error repellendus excepturi enim dolor deleniti adipisci consectetur doloremque, unde maiores odit sapiente. Atque ab necessitatibus laboriosam consequatur eius similique, ex dolorum eum eaque sequi id veritatis voluptates perspiciatis, cupiditate pariatur.</p>
     </div>
-
-    <script>
-        // --- CSV Upload Logic ---
-        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
-            event.preventDefault(); 
-
-            const fileInput = document.getElementById('csvFile');
-            const resultDiv = document.getElementById('uploadResult');
-            const file = fileInput.files[0];
-
-            if (!file) {
-                resultDiv.className = 'upload-result error';
-                resultDiv.textContent = 'Please select a file.';
-                return;
-            }
-
-            resultDiv.className = 'upload-result';
-            resultDiv.textContent = 'Uploading and processing...';
-            
-            const formData = new FormData();
-            // 'file' must match the key used in request.files['file'] in routes.py
-            formData.append('file', file); 
-
-            try {
-                const response = await fetch('/api/v1/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (response.ok && result.status === 'completed') {
-                    resultDiv.className = 'upload-result success';
-                    resultDiv.textContent = `
-Upload Successful! (Type: ${file.name.includes('weather') ? 'Weather' : 'Sensor'})
-Status: ${result.status}
-Success Count: ${result.success_count}
-Failed Count: ${result.fail_count}
-Message: ${result.message}
-                    `;
-                } else {
-                    resultDiv.className = 'upload-result error';
-                    resultDiv.textContent = `
-Processing Failed!
-Status: ${result.status || response.status}
-Error: ${result.message || 'Unknown server error'}
-                    `;
-                }
-            } catch (error) {
-                resultDiv.className = 'upload-result error';
-                resultDiv.textContent = `Network Error: ${error.message}`;
-            }
-        });
-
-        // --- API Fetch Logic ---
-        async function fetchApiData(url, outputId) {
-            const outputDiv = document.getElementById(outputId);
-            outputDiv.textContent = 'Fetching data...';
-            
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                if (response.ok) {
-                    // Display pretty-printed JSON
-                    outputDiv.textContent = JSON.stringify(data, null, 2);
-                } else {
-                    outputDiv.textContent = `Error: ${data.error || 'Failed to fetch data'}`;
-                }
-            } catch (error) {
-                outputDiv.textContent = `Network Error: ${error.message}`;
-            }
-        }
-    </script>
+    <div class="container">
+      <h2>Example Heading</h2>
+      <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Hic aliquid corrupti, tenetur fuga magnam necessitatibus blanditiis quod sint excepturi laborum esse alias labore molestias adipisci, nostrum corporis ex maiores quis dolore quidem asperiores odio ad fugit eos! Delectus modi quas ipsa deleniti consequuntur nihil, hic in ipsum exercitationem blanditiis natus, ex, expedita eos. Excepturi quidem harum hic nam magnam deserunt illum quis dolorum eos ipsum ut natus sapiente sit, officia obcaecati assumenda tempore molestias? In fugiat iure laboriosam quasi, eum suscipit, harum autem saepe ut, soluta aspernatur ducimus eos magnam quidem officiis. Laboriosam nemo explicabo delectus, et quos vero cum?</p>
+    </div>
+    <div class="container">
+      <h2>Lorem Ipsum</h2>
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore repudiandae labore veniam reprehenderit voluptatum, laboriosam perferendis fuga, dolore quam quas nostrum totam sunt esse expedita. Vero distinctio omnis accusantium. Quisquam ullam saepe cupiditate magni numquam totam perspiciatis error velit, debitis veniam labore possimus aut sunt, reiciendis natus. Impedit provident voluptatum nulla fuga error a magnam, corporis natus aperiam fugit quod perferendis quos quaerat, numquam sequi doloribus tenetur dolorem voluptate deleniti, odio minus. Deserunt eius quasi odit voluptas unde voluptatum dicta cumque exercitationem soluta beatae porro distinctio, delectus officiis, nobis officia ullam necessitatibus, rem natus corrupti nam! Est, nihil molestias fugiat sed quae enim commodi expedita soluta tempore molestiae fuga adipisci rem esse voluptates quos, ut quasi sunt ad a perspiciatis ducimus maxime animi. Adipisci officia doloribus magni alias maiores ab quo, eos mollitia sint esse. Labore odio, architecto nihil quaerat soluta blanditiis impedit laudantium esse officiis dolorum dolore libero, id sequi minima incidunt eum facilis itaque distinctio. Voluptas doloremque minus reiciendis ex beatae laudantium cum sequi repellat blanditiis molestiae. Cumque, libero nulla! Sit, quisquam magni dolore consectetur odio impedit adipisci voluptas ab, laboriosam autem nihil nam est ipsa excepturi obcaecati eos neque! Omnis similique qui veritatis. Repellat magni dolorem, facilis eaque, harum molestias, delectus est adipisci laudantium velit optio blanditiis debitis? Tenetur totam maiores animi officiis eligendi expedita nemo corrupti distinctio. Cum libero soluta beatae doloribus sit, repellendus nobis vel obcaecati velit dolorem voluptate magnam inventore quas pariatur quam reprehenderit molestiae hic sunt dicta illo amet quis magni accusamus sequi? Vel quis, dolores iusto suscipit excepturi laboriosam repellat consectetur! Maiores deserunt, pariatur nesciunt consequuntur recusandae minima assumenda consequatur inventore natus debitis illo velit voluptatum necessitatibus qui aspernatur illum impedit magni dignissimos ea, molestias tempora corporis, asperiores iusto possimus. Libero expedita aspernatur officia totam dolorum culpa, minus, alias adipisci eligendi suscipit voluptates, magnam laudantium? Inventore cupiditate perspiciatis mollitia excepturi, voluptatibus ducimus expedita provident. Dicta, odit. Odio, qui repudiandae! Maiores dignissimos, magnam deleniti reprehenderit ex cum ea eveniet placeat quae, ad at perspiciatis nobis corporis doloribus voluptatem nulla aliquam sunt accusamus facere quaerat necessitatibus ipsa! Nam quisquam dicta minima commodi nostrum. Exercitationem necessitatibus optio cumque voluptate modi amet consequuntur similique ex inventore explicabo doloremque esse sed sequi nemo rem, nostrum ullam. Totam repellat ut ipsa quisquam rem, nulla, suscipit debitis atque earum quis voluptates quaerat exercitationem architecto repellendus placeat, tenetur incidunt distinctio consectetur reiciendis minima officiis aliquam? Ipsum sequi hic officia iste a. Blanditiis, dicta! Eveniet molestias ut natus odio fugiat cum necessitatibus, architecto, quo a quisquam autem porro explicabo ipsam, nostrum deserunt possimus expedita eum est corporis quibusdam cupiditate! Fugiat, quaerat saepe. Harum modi eligendi beatae alias fugiat. Nostrum cum nisi saepe dicta iste cupiditate, deserunt omnis, doloremque a distinctio eum rem adipisci ab? Sapiente, dicta ipsam blanditiis earum omnis necessitatibus temporibus, excepturi accusantium delectus quo quod iusto ad aliquam nemo ducimus ab nobis inventore sequi veritatis? Nulla, dolorem. Voluptas, obcaecati non facilis repellendus ratione officiis veritatis, modi culpa rerum placeat voluptatum quia ex? Officia quos dolorum repellat deserunt voluptas praesentium.</p>
+    </div>
+  </main>
 </body>
 </html>
