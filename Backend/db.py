@@ -7,7 +7,7 @@ import datetime # Needed for UNIX timestamp conversion
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
-    'password': '031021', # Your actual password
+    'password': '040813', # Your actual password
     'database': 'Weather_Db'
 }
 
@@ -143,3 +143,4 @@ def insert_weather_data(data_row):
     finally:
         if conn:
             conn.close()
+

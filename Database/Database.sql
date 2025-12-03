@@ -1,3 +1,4 @@
+-- Active: 1764679672854@@127.0.0.1@3306@mysql
 -- 1. Create and select the database
 CREATE DATABASE IF NOT EXISTS weather_Db;
 
@@ -25,6 +26,7 @@ CREATE TABLE audiorecording (
     file_path TEXT NOT NULL
 );
 
+-- Weather table
 CREATE TABLE WEATHER_DATA (
     id INT AUTO_INCREMENT PRIMARY KEY,
     timestamp DATETIME NOT NULL,
@@ -58,3 +60,4 @@ CREATE TABLE audioenv_link (
     Foreign Key (weather_id) REFERENCES weather_data (id),
     Foreign Key (sensors_id) REFERENCES sensors (id)
 );
+

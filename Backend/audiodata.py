@@ -3,6 +3,7 @@ import os
 import re
 from datetime import datetime
 from config import AUDIO_DIRECTORY
+from backend.db import get_db_connection
 
 
 
@@ -80,13 +81,6 @@ def extract_batch_metadata(audio_directory):
             if metadata:
                 metadata_list.append(metadata)
     return metadata_list
-
-
-
-
-
-
-
 
 
 # test
