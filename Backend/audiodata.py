@@ -3,7 +3,7 @@ import os
 import re
 from datetime import datetime
 from config import AUDIO_DIRECTORY
-from backend.db import get_db_connection
+from db import get_db_connection
 
 
 
@@ -87,7 +87,7 @@ def extract_batch_metadata(audio_directory):
 
 """ if __name__ == "__main__":
     # Example 1: Process all audio files in a directory
-    audio_dir = r"C:\Users\herma\Videos\4K Video Downloader"
+    audio_dir = r"C:\\Users\\herma\Videos\\4K Video Downloader"
     all_metadata = extract_batch_metadata(audio_dir)  # Fixed: was 'audio_directory'
     
     print(f"Found {len(all_metadata)} audio files\n")

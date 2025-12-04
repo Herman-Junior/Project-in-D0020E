@@ -1,62 +1,14 @@
 from flask import jsonify, render_template, request, send_from_directory, send_file
-from db import get_db_connection 
+from db import get_db_connection, get_latest_audio_data, insert_audio_recording
+from audiodata import extract_audio_metadata
 from data_loader import process_csv_file
 from werkzeug.utils import secure_filename
 from config import AUDIO_DIRECTORY
+from datetime import datetime, date, timedelta
 import pymysql.cursors
 import os 
-import datetime 
 
 
-def upload_audio_file():
-    """
-    Handles POST requests to upload a single audio file from the frontend.
-    """
-    # 1. Check if a file was sent
-    if 'file' not in request.files:
-        return jsonify({"status": "error", "message": "No file part in the request"}), 400
-    
-    file = request.files['file']
-    
-    # 2. Check if the file is empty
-    if file.filename == '':
-        return jsonify({"status": "error", "message": "No file selected for uploading"}), 400
-    
-    # Optional: Check file extension (e.g., allow .mp3, .wav)
-    ALLOWED_EXTENSIONS = {'mp3', 'wav', 'ogg', 'flac'}
-    def allowed_file(filename):
-        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-    if file and allowed_file(file.filename):
-
-        if not os.path.exists(AUDIO_DIRECTORY):
-        # os.makedirs(..., exist_ok=True) creates the directory if it doesn't exist.
-            os.makedirs(AUDIO_DIRECTORY, exist_ok=True)
-
-        # 3. Securely save the file to the audio directory
-        filename = secure_filename(file.filename)
-        save_path = os.path.join(AUDIO_DIRECTORY, filename)
-        
-        try:
-            file.save(save_path)
-            
-            # Optional: Directly insert metadata for the *new* file
-            # from audiodata import extract_audio_metadata
-            # metadata = extract_audio_metadata(save_path)
-            # success, last_id = insert_audio_recording(metadata['filepath'], ...)
-            
-            return jsonify({
-                "status": "success", 
-                "message": f"File '{filename}' successfully uploaded and saved.",
-                "path": save_path
-            }), 201
-            
-        except Exception as e:
-            print(f"File Save Error: {e}")
-            return jsonify({"status": "error", "message": f"Failed to save file: {e}"}), 500
-            
-    else:
-        return jsonify({"status": "error", "message": "Invalid file type. Only MP3, WAV, OGG, FLAC are allowed."}), 400
 
 
 # --- SENSOR DATA FUNCTIONS --- #
@@ -232,40 +184,50 @@ def get_weather_api():
         
     return jsonify(weather_data)    
 
+# --- AUDIO DATA FUNCTIONS --- #
+
 def get_audio_api():
-    file_path = request.args.get("file_path")
-    if not file_path:
-        return jsonify({"error": "file_path query parameter is required"}), 400
-
-    conn = None
+    """
+    API endpoint to retrieve the latest audio recording data, handling
+    datetime to string conversion for JSON serialization.
+    """
     try:
-        conn = get_db_connection(dict_cursor=True)
-        if not conn:
-            return jsonify({'error': "Database connection failed."}), 500
+        # 1. Fetch data from DB
+        data = get_latest_audio_data(limit=10) 
 
-        cursor = conn.cursor()
-        cursor.execute("SELECT file_path FROM audiorecording WHERE file_path = %s", (file_path,))
-        row = cursor.fetchone()
+        data = get_latest_audio_data(limit=10) 
+        # ...
 
-        if not row:
-            return jsonify({"error": "File not found in database"}), 404
+        # 2. Process data for JSON serialization
+        processed_data = []
+        for record in data:
+            # Create a copy to modify
+            record_copy = dict(record) 
+            
+            # Convert date (DATE type) to string
+            # FIX: Check against the imported 'date' class
+            if 'date' in record_copy and record_copy['date'] and isinstance(record_copy['date'], date):
+                record_copy['date'] = record_copy['date'].strftime('%Y-%m-%d')
+            
+            # Convert start_time (DATETIME type) to string
+            # FIX: Check against the imported 'datetime' class
+            if 'start_time' in record_copy and record_copy['start_time'] and isinstance(record_copy['start_time'], datetime):
+                record_copy['start_time'] = record_copy['start_time'].strftime('%Y-%m-%d %H:%M:%S')
+                
+            # Convert end_time (DATETIME type) to string
+            # FIX: Check against the imported 'datetime' class
+            if 'end_time' in record_copy and record_copy['end_time'] and isinstance(record_copy['end_time'], datetime):
+                record_copy['end_time'] = record_copy['end_time'].strftime('%Y-%m-%d %H:%M:%S')
+                
+            processed_data.append(record_copy)
 
-        # ✅ Safe path resolution
-        BASE_AUDIO_DIR = os.path.join(os.path.dirname(__file__), 'audio_files')
-        full_path = os.path.join(BASE_AUDIO_DIR, os.path.basename(row["file_path"]))
-
-        if not os.path.exists(full_path):
-            return jsonify({"error": "File not found on server"}), 404
-
-        return send_file(full_path, mimetype="audio/mpeg")
-
+        # 3. Return the processed, serializable data
+        return jsonify(processed_data), 200
+            
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-    finally:
-        if conn:
-            conn.close()
-
+        # Catch and log any remaining server errors
+        print(f"Server Error in get_audio_api: {e}")
+        return jsonify({"error": "Internal Server Error", "details": "Failed to process audio data on the server."}), 500
 
     """API endpoint handler for /api/v1/audio."""
     """I want to create an api get to fetch audio files from the filepath provided by user"""
@@ -291,6 +253,97 @@ def insert_audio_batch_api():
         return jsonify({"status": "error", "message": f"Server processing failed: {e}"}), 500
 
 # --- UPLOAD FUNCTIONS --- #
+
+def upload_audio_file():
+    """
+    Handles POST requests to upload a single audio file from the frontend,
+    saves the file, and inserts metadata into the database.
+    """
+    # 1. Check if a file was sent
+    if 'file' not in request.files:
+        return jsonify({"status": "error", "message": "No file part in the request"}), 400
+    
+    # CRITICAL: THIS LINE DEFINES THE 'file' VARIABLE
+    file = request.files['file']
+    
+    # 2. Check if the file is empty
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No file selected for uploading"}), 400
+    
+    # Optional: Define allowed_file (or import it if defined elsewhere)
+    ALLOWED_EXTENSIONS = {'mp3', 'wav', 'ogg', 'flac'}
+    def allowed_file(filename):
+        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+    # The rest of your processing logic starts here:
+    if file and allowed_file(file.filename):
+
+        if not os.path.exists(AUDIO_DIRECTORY):
+            os.makedirs(AUDIO_DIRECTORY, exist_ok=True)
+            
+        filename = secure_filename(file.filename)
+        save_path = os.path.join(AUDIO_DIRECTORY, filename)
+        
+        try:
+            # 1. Save the file
+            file.save(save_path)
+            
+            # 2. Extract metadata
+            metadata = extract_audio_metadata(save_path)
+
+            if metadata and 'start_timestamp' in metadata and 'duration' in metadata:
+                
+                # --- START OF FIX ---
+                start_time_int = metadata['start_timestamp']
+                duration = metadata['duration']
+                
+                # A. Convert the integer Unix timestamp to a Python datetime object
+                start_time_dt = datetime.fromtimestamp(start_time_int)
+                
+                # B. Calculate the end time using the datetime object
+                end_time_dt = start_time_dt + timedelta(seconds=duration)
+
+                # C. Get the date component for the 'date' column
+                date_only = start_time_dt.date()
+                
+                # 3. Insert record into database
+                success, db_message = insert_audio_recording(
+                    date=date_only, 
+                    start_time=start_time_dt, # Use converted datetime object
+                    end_time=end_time_dt,     # Use calculated datetime object
+                    file_path=save_path
+                )
+                # --- END OF FIX ---
+                
+                if not success:
+                    # File saved but DB insertion failed. Report warning to user.
+                    return jsonify({
+                        "status": "warning", 
+                        "message": f"File uploaded, but database record failed: {db_message}",
+                        "path": save_path
+                    }), 201
+
+                # Full success
+                return jsonify({
+                    "status": "success", 
+                    "message": f"File '{filename}' successfully uploaded and record created (ID: {db_message}).",
+                    "path": save_path
+                }), 201
+            
+            else:
+                # File was saved, but metadata extraction failed
+                return jsonify({
+                    "status": "warning", 
+                    "message": f"File uploaded, but metadata extraction failed. Path: {save_path}"
+                }), 201
+            
+        except Exception as e:
+            print(f"Processing Error: {e}")
+            return jsonify({"status": "error", "message": f"Failed during processing: {e}"}), 500
+        
+    else:
+        return jsonify({"status": "error", "message": "Invalid file type. Only MP3, WAV, OGG, FLAC are allowed."}), 400
+
 
 def upload_csv_file():
     """API endpoint to handle file upload, process the CSV, and return the result."""

@@ -3,7 +3,7 @@
 from flask import Flask
 import os
 # Import the route handlers 
-from routes import index, get_sensor_api, get_weather_api, upload_csv_file, insert_audio_batch_api, upload_audio_file
+from routes import index, get_sensor_api, get_weather_api, upload_csv_file, insert_audio_batch_api, upload_audio_file, get_audio_api
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
@@ -30,6 +30,9 @@ app.add_url_rule('/api/v1/audio/upload', 'upload_audio_file', upload_audio_file,
 
 # Existing Audio Batch Insertion Route
 app.add_url_rule('/api/v1/audio/insert', 'insert_audio_batch_api', insert_audio_batch_api, methods=['POST'])
+
+#Audio retrival
+app.add_url_rule('/api/v1/audio', 'get_audio_api', get_audio_api)
 
 if __name__ == '__main__':
     # Run the Flask application

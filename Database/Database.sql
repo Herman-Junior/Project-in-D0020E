@@ -13,7 +13,9 @@ DROP TABLE IF EXISTS WEATHER_DATA;
 
 DROP TABLE IF EXISTS SENSOR_DATA;
 
+DROP DATABASE IF EXISTS weather_Db;
 CREATE DATABASE IF NOT EXISTS weather_Db;
+
 
 USE weather_Db;
 
@@ -51,13 +53,4 @@ CREATE TABLE SENSOR_DATA (
     moisture DOUBLE
 );
 
--- Linking tables for relationships between Audio, Weather, and sensors
-CREATE TABLE audioenv_link (
-    audio_id INT,
-    weather_id INT,
-    sensors_id INT,
-    Foreign Key (Audio_id) REFERENCES audiorecording (id),
-    Foreign Key (weather_id) REFERENCES weather_data (id),
-    Foreign Key (sensors_id) REFERENCES sensors (id)
-);
 
