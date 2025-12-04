@@ -131,67 +131,93 @@ main p{
   h2, p { margin-top: 1em }
 }
 
-@media(max-width: 800px){
-  body{
-    grid-template-columns: 1fr;
-  }
-  main{
-    padding: 2em 1em 60px 1em;
-  }
-  .container{
-    border: none;
-    padding: 0;
-  }
-  #sidebar{
-    height: 60px;
+/* For INSERT_PAGE */
+/* --- UPLOAD PAGE STYLES (Based on Sketch) --- */
+
+.upload-area-container {
+    /* Uses CSS Grid to lay out the two boxes side-by-side */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px; /* Space between the CSV box and the Audio box */
+    margin-top: 30px;
+}
+
+.upload-box {
+    /* Styles applied to both CSV and Audio containers */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.upload-box h2 {
+    margin-bottom: 0.5em;
+    font-size: 1.5em;
+}
+
+.upload-form {
     width: 100%;
-    border-right: none;
-    border-top: 1px solid var(--line-clr);
-    padding: 0;
-    position: fixed;
-    top: unset;
-    bottom: 0;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-    > ul{
-      padding: 0;
-      display: grid;
-      grid-auto-columns: 60px;
-      grid-auto-flow: column;
-      align-items: center;
-      overflow-x: scroll;
-    }
-    ul li{
-      height: 100%;
-    }
+.drop-zone {
+    width: 90%;
+    height: 180px;
+    border: 2px dashed var(--line-clr);
+    border-radius: 1em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background-color: var(--hover-clr);
+    transition: background-color 0.2s;
+    margin-bottom: 20px;
+}
 
-    ul li span, ul li:first-child{
-      display: none;
-    }
+.drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent-clr);
+    background-color: #33364f; /* Slightly darker shade */
+}
 
-    ul li .sub-menu.show{
-      position: fixed;
-      bottom: 60px;
-      left: 0;
-      box-sizing: border-box;
-      height: 60px;
-      width: 100%;
-      background-color: var(--hover-clr);
-      border-top: 1px solid var(--line-clr);
-      display: flex;
-      justify-content: center;
+.drop-zone svg {
+    fill: var(--secondary-text-clr);
+    margin-bottom: 10px;
+}
 
-      > div{
-        overflow-x: auto;
-      }
-      li{
-        display: inline-flex;
-      }
-      a{
-        box-sizing: border-box;
-        padding: 1em;
-        width: auto;
-        justify-content: center;
-      }
-    }
-  }
+.drop-zone p {
+    color: var(--secondary-text-clr);
+    margin: 0;
+}
+
+.insert-btn {
+    padding: 10px 20px;
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--base-clr);
+    background-color: var(--accent-clr);
+    border: none;
+    border-radius: 0.5em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 90%;
+}
+
+.insert-btn:hover {
+    background-color: #7b80ff; /* Slightly lighter accent */
+}
+
+/* Status message colors */
+.status-message {
+    margin-top: 15px;
+    font-size: 0.9em;
+    color: var(--secondary-text-clr);
+}
+
+/* Override default container padding for the upload page */
+#csv-upload-box, #audio-upload-box {
+    padding: 30px;
 }

@@ -1,0 +1,75 @@
+{% extends "base.html" %} 
+
+{% block title %}Insert Data - Database Manager{%endblock %} 
+
+{% block scripts %}
+    <script type="text/javascript" src="{{ url_for('static', filename='scripts/upload.js') }}" defer></script>
+{% endblock %}
+{% block content %}
+
+<h1>Insert Data</h1>
+
+<div class="upload-area-container">
+  <div class="container upload-box" id="csv-upload-box">
+    <h2>CSV File Insert</h2>
+
+    <form id="csv-upload-form" class="upload-form">
+      <div class="drop-zone" id="csv-drop-zone">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          height="64px"
+          viewBox="0 -960 960 960"
+          width="64px"
+          fill="#e3e3e3"
+        >
+          <path
+            d="M200-120q-33 0-56.5-23.5T120-200v-400q0-33 23.5-56.5T200-680h160v80H200v400h560v-400H600v-80h160q33 0 56.5 23.5T840-600v400q0 33-23.5 56.5T760-120H200Zm280-200L320-480l56-56 64 63v-487h80v487l64-63 56 56-160 160Z"
+          />
+        </svg>
+        <p>Drag & Drop CSV Here</p>
+        <input
+          type="file"
+          id="csv-file-input"
+          accept=".csv"
+          multiple
+          style="display: none"
+        />
+      </div>
+
+      <button type="submit" class="insert-btn">Insert CSV</button>
+    </form>
+    <div id="csv-status" class="status-message"></div>
+  </div>
+
+  <div class="container upload-box" id="audio-upload-box">
+    <h2>Audio File Insert</h2>
+
+    <form id="audio-upload-form" class="upload-form">
+      <div class="drop-zone" id="audio-drop-zone">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          height="64px"
+          viewBox="0 -960 960 960"
+          width="64px"
+          fill="#e3e3e3"
+        >
+          <path
+            d="M200-120q-33 0-56.5-23.5T120-200v-400q0-33 23.5-56.5T200-680h160v80H200v400h560v-400H600v-80h160q33 0 56.5 23.5T840-600v400q0 33-23.5 56.5T760-120H200Zm280-200L320-480l56-56 64 63v-487h80v487l64-63 56 56-160 160Z"
+          />
+        </svg>
+        <p>Drag & Drop Audio Here</p>
+        <input
+          type="file"
+          id="audio-file-input"
+          accept=".wav,.mp3"
+          multiple
+          style="display: none"
+        />
+      </div>
+
+      <button type="submit" class="insert-btn">Insert Audio</button>
+    </form>
+    <div id="audio-status" class="status-message"></div>
+  </div>
+</div>
+{% endblock %}

@@ -17,6 +17,9 @@ def process_csv_file(filepath):
     Reads a CSV file, determines data type, and inserts data.
     Includes deep debugging prints on failure.
     """
+
+    print("Started processing")
+    
     success_count = 0
     fail_count = 0
     errors = []

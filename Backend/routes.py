@@ -223,4 +223,10 @@ def upload_csv_file():
 
 # Serves the static client-side HTML file
 def index():    
-    return render_template('index.html')
+    return render_template('home.html')
+
+def insert_page():
+    return render_template('insert.html')
+
+def query_page():
+    return render_template('query.html')
