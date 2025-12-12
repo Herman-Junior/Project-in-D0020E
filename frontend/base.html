@@ -8,6 +8,9 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
+
+    {% block head_links %}{% endblock %}
+
     <script
       type="text/javascript"
       src="{{ url_for('static', filename='scripts/button.js') }}"

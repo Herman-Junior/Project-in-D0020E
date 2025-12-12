@@ -7,7 +7,7 @@ import datetime
 
 # --- SENSOR DATA FUNCTIONS --- #
 
-def get_latest_sensor_data(start_date=None, end_date=None, limit=50):
+def get_latest_sensor_data(start_date=None, end_date=None, limit=300):
     """
     Retrieves SENSOR_DATA, formatted to show ONLY YYYY-MM-DD Date, Time (HH:MM:SS),
     and Moisture. Handles Python object serialization issues.
@@ -94,7 +94,7 @@ def get_sensor_api():
 
 # --- WEATHER DATA FUNCTIONS --- #
 
-def get_latest_weather_data(start_date=None, end_date=None, limit=50):
+def get_latest_weather_data(start_date=None, end_date=None, limit=300):
     """
     Retrieves WEATHER_DATA, handling date/time formatting and serialization issues.
     It selects all detailed weather metrics along with the date and time.

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Lookup Data - Database Manager{% endblock %}
+
+{% block head_links %}
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/query-styles.css') }}"
+    />
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript" src="{{ url_for('static', filename='scripts/query.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+
+    <h1>Lookup Data</h1>
+    <p>Select a data source and optional date range to query the database.</p>
+
+    <div class="controls-container container">
+        <div class="control-group">
+            <label for="data-select" class="control-label">Data Source</label>
+            <select id="data-select" class="control-input">
+                <option value="sensor">Sensor Data</option>
+                <option value="weather">Weather Data</option>
+                <option value="combined">Combined Data *WIP*</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label for="start-date" class="control-label">Start Date:</label>
+            <input type="date" id="start-date" class="control-input">
+        </div>
+        
+        <div class="control-group">
+            <label for="end-date" class="control-label">End Date:</label>
+            <input type="date" id="end-date" class="control-input">
+        </div>
+
+        <div class="control-group action-group">
+            <button id="load-data-btn" class="insert-btn">Load Data</button>
+        </div>
+    </div>
+    
+    <div id="results-area" class="container results-area-container">
+        <p class="info">Select a data source and click "Load Data" to display results.</p>
+    </div>
+
+{% endblock %}
