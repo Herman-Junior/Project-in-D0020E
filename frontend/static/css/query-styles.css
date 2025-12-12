@@ -9,8 +9,9 @@
     display: flex;
     flex-wrap: wrap; 
     gap: 20px; /* Space between control groups */
-    padding: 20px !important; 
+    padding: 20px; 
     border-color: var(--line-clr); /* Highlight the control container */
+    margin-top: 30px;
 }
 
 .control-group {
@@ -68,16 +69,30 @@
 
 /* Results Area */
 .results-area-container {
-    padding: 20px !important; /* Keep a standard padding for the results box */
+    padding: 20px; /* Keep a standard padding for the results box */
 }
 
 
 /* ------------------------------------------- */
 /* --- DATA TABLE STYLES ---                   */
 /* ------------------------------------------- */
+
+/* * CRITICAL FIX: Force the scrollbar onto the table container.
+ * This ensures the sticky header sticks to the top of this container,
+ * not the main viewport, which was causing conflicts.
+ */
 .table-container {
     width: 100%;
-    overflow-x: auto; /* Allow horizontal scrolling on small screens */
+    
+    /* Define a fixed viewing area height */
+    max-height: 70vh; /* Adjust this value if you need a smaller/larger table area */
+    
+    /* CRITICAL: Force vertical scrolling inside this container */
+    overflow-y: auto; 
+    
+    /* Keep horizontal scrolling */
+    overflow-x: auto; 
+    
     margin-top: 10px;
     border: 1px solid var(--line-clr); 
     border-radius: 1em; 
@@ -86,12 +101,18 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: auto;
+    /* Use fixed layout to help with scrolling and column sizing */
+    table-layout: fixed; 
 }
 
 .data-table th, .data-table td {
     padding: 12px 15px;
     text-align: left;
+}
+
+.data-table thead {
+    /* Ensure the background covers the entire header row */
+    background-color: var(--hover-clr); 
 }
 
 /* Header Styling */
@@ -102,8 +123,12 @@
     text-transform: uppercase;
     font-size: 0.85em;
     letter-spacing: 0.5px;
+    
+    /* The correct sticky rules: sticks to the top of the scrollable .table-container */
     position: sticky;
     top: 0;
+    z-index: 10;
+    
     border-bottom: 2px solid var(--accent-clr); /* Stronger line under the header */
 }
 
@@ -136,7 +161,7 @@
 .data-table tr td:nth-child(1), 
 .data-table tr td:nth-child(2) { 
     color: var(--text-clr); 
-    font-weight: 600; /* Increased from 500 for more visibility */
+    font-weight: 600; 
 }
 
 
@@ -151,7 +176,7 @@
 }
 
 .error {
-    color: #ff5e5e; /* A red color for errors */
+    color: #ff5e5e; /* red color for errors */
     font-weight: 600;
     text-align: center;
     padding: 20px;

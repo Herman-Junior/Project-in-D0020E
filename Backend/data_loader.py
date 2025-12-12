@@ -79,7 +79,7 @@ def process_csv_file(filepath):
                 result = False
                 msg = ""
                 
-                # --- CORE PARSER LOGIC WITH DEBUGGING ---
+                # --- CORE PARSER LOGIC WITH DEBUGGING (FIXED) ---
                 try:
                     
                     if not data_row.get('timestamp'):
@@ -102,15 +102,25 @@ def process_csv_file(filepath):
                         data_row[val_key] = float(data_row[val_key])
                         
                     elif col_count == 9:
-                        for key in data_row:
-                            if key != 'timestamp':
-                                if not data_row.get(key):
-                                    data_row[key] = 0.0
-                                else:
-                                    data_row[key] = float(data_row[key])
+                        # Numeric fields (float)
+                        for key in ['in_temperature', 'out_temperature', 'wind_speed', 'daily_rain', 'rain_rate']:
+                            if not data_row.get(key):
+                                data_row[key] = 0.0
+                            else:
+                                data_row[key] = float(data_row[key])
+
+                        # Humidity fields (int)
+                        for key in ['in_humidity', 'out_humidity']:
+                            if not data_row.get(key):
+                                # Use 0 as default integer value if missing
+                                data_row[key] = 0 
+                            else:
+                                # Convert to int to match DB schema (INT)
+                                data_row[key] = int(float(data_row[key])) 
+
+                        # Wind Direction is a string and requires no conversion, so we leave it alone.
 
                     # 3. Call the insertion function
-                    # (This is where the DB attempt happens)
                     result, msg = insert_func(data_row)
                     
                 except ValueError as e:

@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
 :root{
   --base-clr: #11121a;
   --line-clr: #42434a;
@@ -7,44 +8,64 @@
   --accent-clr: #5e63ff;
   --secondary-text-clr: #b0b3c1;
 }
+
 *{
   margin: 0;
   padding: 0;
+  box-sizing: border-box; /* Ensure padding and border are inside the element's total width/height */
 }
+
 html{
   font-family: Poppins, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.5rem;
+
+  /* Ensure only the main window scrollbar is responsible for vertical content */
+  overflow-x: hidden; 
+  min-height: 100vh;
 }
+
 body{
   min-height: 100vh;
   min-height: 100dvh;
   background-color: var(--base-clr);
   color: var(--text-clr);
+  
+  /* Layout: Sidebar (auto) and Content (1fr) */
   display: grid;
   grid-template-columns: auto 1fr;
+
+  /* CRITICAL: The body is the scroll container. Must not clip content. */
+  overflow: auto; /* Allow scrolling if content exceeds viewport */
+  overflow-x: hidden; /* Hide horizontal scroll on the body */
 }
+
+/* Sidebar Styles */
 #sidebar{
-  box-sizing: border-box;
-  height: 100vh;
+  min-height: 100%;
   width: 250px;
   padding: 5px 1em;
   background-color: var(--base-clr);
   border-right: 1px solid var(--line-clr);
-
-  position: sticky;
-  top: 0;
-  align-self: start;
+  
+  /* CRITICAL: This element is pinned to the top by the grid's align-items: stretch default.
+     Removing 'position: sticky' prevents conflicts with the table's sticky header. */
+  top: 0; 
+  align-self: start; 
   transition: 300ms ease-in-out;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   text-wrap: nowrap;
 }
+
 #sidebar.close{
   padding: 5px;
   width: 60px;
 }
+
 #sidebar ul{
   list-style: none;
 }
+
 #sidebar > ul > li:first-child{
   display: flex;
   justify-content: flex-end;
@@ -53,6 +74,7 @@ body{
     font-weight: 600;
   }
 }
+
 #sidebar ul li.active a{
   color: var(--accent-clr);
 
@@ -70,16 +92,20 @@ body{
   align-items: center;
   gap: 1em;
 }
+
 #sidebar svg{
   flex-shrink: 0;
   fill: var(--text-clr);
 }
+
 #sidebar a span{
   flex-grow: 1;
 }
+
 #sidebar a:hover{
   background-color: var(--hover-clr);
 }
+
 #sidebar .sub-menu{
   display: grid;
   grid-template-rows: 0fr;
@@ -89,15 +115,19 @@ body{
     overflow: hidden;
   }
 }
+
 #sidebar .sub-menu.show{
   grid-template-rows: 1fr;
 }
+
 .rotate svg:last-child{
   rotate: 180deg;
 }
+
 #sidebar .sub-menu a{
   padding-left: 2em;
 }
+
 #toggle-btn{
   margin-left: auto;
   padding: 1em;
@@ -110,18 +140,27 @@ body{
     transition: rotate 150ms ease;
   }
 }
+
 #toggle-btn:hover{
   background-color: var(--hover-clr);
 }
 
+/* Main Content Area */
 main{
   padding: min(30px, 7%);
+  
+  /* CRITICAL FIX: Ensure the main content area does not clip sticky children 
+     and allows its content to dictate height. */
+  overflow: visible !important;
+  overflow-y: visible !important;
 }
+
 main p{
   color: var(--secondary-text-clr);
   margin-top: 5px;
   margin-bottom: 15px;
 }
+
 .container{
   border: 1px solid var(--line-clr);
   border-radius: 1em;
@@ -131,90 +170,94 @@ main p{
   h2, p { margin-top: 1em }
 }
 
-/* For INSERT_PAGE */
-/* --- UPLOAD PAGE STYLES (Based on Sketch) --- */
+/* --- UPLOAD PAGE STYLES --- */
 
 .upload-area-container {
-    /* Uses CSS Grid to lay out the two boxes side-by-side */
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px; /* Space between the CSV box and the Audio box */
-    margin-top: 30px;
+  /* Uses CSS Grid to lay out the two boxes side-by-side */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px; /* Space between the CSV box and the Audio box */
+  margin-top: 30px;
 }
 
 .upload-box {
-    /* Styles applied to both CSV and Audio containers */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+  /* Styles applied to both CSV and Audio containers */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .upload-box h2 {
-    margin-bottom: 0.5em;
-    font-size: 1.5em;
+  margin-bottom: 0.5em;
+  font-size: 1.5em;
 }
 
 .upload-form {
-    width: 100%;
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  width: 100%;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .drop-zone {
-    width: 90%;
-    height: 180px;
-    border: 2px dashed var(--line-clr);
-    border-radius: 1em;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    background-color: var(--hover-clr);
-    transition: background-color 0.2s;
-    margin-bottom: 20px;
+  width: 90%;
+  height: 180px;
+  border: 2px dashed var(--line-clr);
+  border-radius: 1em;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  background-color: var(--hover-clr);
+  transition: background-color 0.2s;
+  margin-bottom: 20px;
 }
 
 .drop-zone:hover, .drop-zone.dragover {
-    border-color: var(--accent-clr);
-    background-color: #33364f; /* Slightly darker shade */
+  border-color: var(--accent-clr);
+  background-color: #33364f; /* Slightly darker shade */
 }
 
 .drop-zone svg {
-    fill: var(--secondary-text-clr);
-    margin-bottom: 10px;
+  fill: var(--secondary-text-clr);
+  margin-bottom: 10px;
 }
 
 .drop-zone p {
-    color: var(--secondary-text-clr);
-    margin: 0;
+  color: var(--secondary-text-clr);
+  margin: 0;
 }
 
 .insert-btn {
-    padding: 10px 20px;
-    font-size: 1em;
-    font-weight: 600;
-    color: var(--base-clr);
-    background-color: var(--accent-clr);
-    border: none;
-    border-radius: 0.5em;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    width: 90%;
+  padding: 10px 20px;
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--base-clr);
+  background-color: var(--accent-clr);
+  border: none;
+  border-radius: 0.5em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 90%;
 }
 
 .insert-btn:hover {
-    background-color: #7b80ff; /* Slightly lighter accent */
+  background-color: #7b80ff; /* Slightly lighter accent */
 }
 
 /* Status message colors */
 .status-message {
-    margin-top: 15px;
-    font-size: 0.9em;
-    color: var(--secondary-text-clr);
+  margin-top: 15px;
+  font-size: 0.9em;
+  color: var(--secondary-text-clr);
+}
+
+/* Override default container padding for the upload page */
+#csv-upload-box, #audio-upload-box {
+  padding: 30px;
 }
 
 /* Override default container padding for the upload page */
