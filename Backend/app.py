@@ -36,4 +36,4 @@ app.add_url_rule('/api/v1/audio', 'get_audio_api', get_audio_api)
 
 if __name__ == '__main__':
     # Run the Flask application
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

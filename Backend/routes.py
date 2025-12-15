@@ -259,18 +259,17 @@ def upload_audio_file():
     Handles POST requests to upload a single audio file from the frontend,
     saves the file, and inserts metadata into the database.
     """
-    # 1. Check if a file was sent
+    # Check if a file was sent
     if 'file' not in request.files:
         return jsonify({"status": "error", "message": "No file part in the request"}), 400
     
     # CRITICAL: THIS LINE DEFINES THE 'file' VARIABLE
     file = request.files['file']
     
-    # 2. Check if the file is empty
     if file.filename == '':
         return jsonify({"status": "error", "message": "No file selected for uploading"}), 400
     
-    # Optional: Define allowed_file (or import it if defined elsewhere)
+    # Define allowed_file (or import it if defined elsewhere)
     ALLOWED_EXTENSIONS = {'mp3', 'wav', 'ogg', 'flac'}
     def allowed_file(filename):
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -285,43 +284,38 @@ def upload_audio_file():
         save_path = os.path.join(AUDIO_DIRECTORY, filename)
         
         try:
-            # 1. Save the file
+            # Save the file
             file.save(save_path)
             
-            # 2. Extract metadata
+            # Extract metadata
             metadata = extract_audio_metadata(save_path)
 
             if metadata and 'start_timestamp' in metadata and 'duration' in metadata:
                 
-                # --- START OF FIX ---
+                
                 start_time_int = metadata['start_timestamp']
                 duration = metadata['duration']
                 
-                # A. Convert the integer Unix timestamp to a Python datetime object
+                # Convert the integer Unix timestamp to a Python datetime object
                 start_time_dt = datetime.fromtimestamp(start_time_int)
                 
-                # B. Calculate the end time using the datetime object
+                # Calculate the end time using the datetime object
                 end_time_dt = start_time_dt + timedelta(seconds=duration)
 
-                # C. Get the date component for the 'date' column
+                # Get the date component for the 'date' column
                 date_only = start_time_dt.date()
                 
-                # 3. Insert record into database
+                # Insert record into database
                 success, db_message = insert_audio_recording(
                     date=date_only, 
                     start_time=start_time_dt, # Use converted datetime object
                     end_time=end_time_dt,     # Use calculated datetime object
                     file_path=save_path
                 )
-                # --- END OF FIX ---
                 
                 if not success:
-                    # File saved but DB insertion failed. Report warning to user.
-                    return jsonify({
-                        "status": "warning", 
-                        "message": f"File uploaded, but database record failed: {db_message}",
-                        "path": save_path
-                    }), 201
+                    # DB insertion failed, raise error to trigger cleanup
+                    raise Exception(f"Database insertion failed: {db_message}")
 
                 # Full success
                 return jsonify({
@@ -329,20 +323,25 @@ def upload_audio_file():
                     "message": f"File '{filename}' successfully uploaded and record created (ID: {db_message}).",
                     "path": save_path
                 }), 201
-            
-            else:
-                # File was saved, but metadata extraction failed
-                return jsonify({
-                    "status": "warning", 
-                    "message": f"File uploaded, but metadata extraction failed. Path: {save_path}"
-                }), 201
-            
+    
         except Exception as e:
-            print(f"Processing Error: {e}")
-            return jsonify({"status": "error", "message": f"Failed during processing: {e}"}), 500
-        
-    else:
-        return jsonify({"status": "error", "message": "Invalid file type. Only MP3, WAV, OGG, FLAC are allowed."}), 400
+            # --- CRITICAL CLEANUP STEP ---
+            # If an error occurred (metadata fail or DB fail), delete the saved file.
+            if save_path and os.path.exists(save_path):
+                try:
+                    os.remove(save_path)
+                    print(f"Cleaned up file: {save_path}")
+                except Exception as cleanup_e:
+                    print(f"Warning: Failed to delete file during cleanup: {cleanup_e}")
+            # --- END CRITICAL CLEANUP STEP ---
+
+            # Return error response
+            return jsonify({
+                "status": "error", 
+                "message": f"Processing failed. File was NOT saved. Details: {e}"
+            }), 500
+        else:
+            return jsonify({"status": "error", "message": "Invalid file type. Only MP3, WAV, OGG, FLAC are allowed."}), 400
 
 
 def upload_csv_file():

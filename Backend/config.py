@@ -3,8 +3,8 @@ import os
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
-    'password': '031021',
-    'database': 'Weather_Db'
+    'password': '040813',
+    'database': 'WEATHER_DB'
 }
 
 
