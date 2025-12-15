@@ -48,13 +48,3 @@ CREATE TABLE SENSOR_DATA (
     time TIME,
     moisture DOUBLE
 );
-
--- Linking tables for relationships between Audio, Weather, and sensors
-CREATE TABLE audioenv_link (
-    audio_id INT,
-    weather_id INT,
-    sensors_id INT,
-    Foreign Key (Audio_id) REFERENCES audiorecording (id),
-    Foreign Key (weather_id) REFERENCES weather_data (id),
-    Foreign Key (sensors_id) REFERENCES sensors (id)
-);

@@ -3,22 +3,24 @@
 from flask import Flask
 import os
 # Import the route handlers (index, get_sensor_api, and get_weather_api)
-from routes import (index, get_sensor_api, get_weather_api, upload_csv_file, upload_audio_metadata, get_audio_with_environmental_data)
+from routes import index, get_sensor_api, get_weather_api, upload_csv_file
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 
-FRONTEND_PATH = os.path.join(PROJECT_ROOT, 'frontend')
-STATIC_PATH = os.path.join(FRONTEND_PATH, 'static')
+TEMPLATE_FOLDER_PATH = os.path.join(PROJECT_ROOT, 'frontend')
+STATIC_FOLDER_PATH = os.path.join(PROJECT_ROOT, 'frontend', 'static')
 
 app = Flask(__name__, 
-            template_folder=FRONTEND_PATH,
-            static_folder=STATIC_PATH)
+            template_folder=TEMPLATE_FOLDER_PATH,
+            static_folder=STATIC_FOLDER_PATH)
 
 
 # Register the routes with the application
 # The root URL serves the static HTML file
 app.add_url_rule('/', 'index', index)
+app.add_url_rule('/insert', 'insert_page', insert_page)
+app.add_url_rule('/query', 'query_page', query_page)
 
 # Register the distinct API endpoints
 # Note: using the v1 prefix in the URL for versioning (e.g., /api/v1/sensors)

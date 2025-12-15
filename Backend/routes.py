@@ -9,7 +9,7 @@ from db import insert_audio_data, get_sensor_data_for_audio,get_weather_data_for
 
 # --- SENSOR DATA FUNCTIONS --- #
 
-def get_latest_sensor_data(start_date=None, end_date=None, limit=50):
+def get_latest_sensor_data(start_date=None, end_date=None, limit=300):
     """
     Retrieves SENSOR_DATA, formatted to show ONLY YYYY-MM-DD Date, Time (HH:MM:SS),
     and Moisture. Handles Python object serialization issues.
@@ -96,7 +96,7 @@ def get_sensor_api():
 
 # --- WEATHER DATA FUNCTIONS --- #
 
-def get_latest_weather_data(start_date=None, end_date=None, limit=50):
+def get_latest_weather_data(start_date=None, end_date=None, limit=300):
     """
     Retrieves WEATHER_DATA, handling date/time formatting and serialization issues.
     It selects all detailed weather metrics along with the date and time.
@@ -306,4 +306,10 @@ def get_audio_with_environmental_data():
 
     # Serves the static client-side HTML file
 def index():    
-    return render_template('index.html')
+    return render_template('home.html')
+
+def insert_page():
+    return render_template('insert.html')
+
+def query_page():
+    return render_template('query.html')
