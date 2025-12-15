@@ -3,7 +3,7 @@
 from flask import Flask
 import os
 # Import the route handlers (index, get_sensor_api, and get_weather_api)
-from routes import index, get_sensor_api, get_weather_api, upload_csv_file
+from routes import (index, get_sensor_api, get_weather_api, upload_csv_file, upload_audio_metadata, get_audio_with_environmental_data)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
@@ -25,6 +25,10 @@ app.add_url_rule('/', 'index', index)
 app.add_url_rule('/api/v1/sensors', 'get_sensor_api', get_sensor_api)
 app.add_url_rule('/api/v1/weather', 'get_weather_api', get_weather_api) 
 app.add_url_rule('/api/v1/upload', 'upload_csv_file', upload_csv_file, methods=['POST'])
+app.add_url_rule('/api/v1/audio/upload', 'upload_audio_metadata', 
+                 upload_audio_metadata, methods=['POST'])
+app.add_url_rule('/api/v1/audio/environmental', 'get_audio_with_environmental_data', 
+                 get_audio_with_environmental_data)
 
 if __name__ == '__main__':
     # Run the Flask application

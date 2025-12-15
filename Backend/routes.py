@@ -4,6 +4,8 @@ from data_loader import process_csv_file
 import pymysql.cursors
 import os 
 import datetime 
+from audiodata import extract_batch_metadata
+from db import insert_audio_data, get_sensor_data_for_audio,get_weather_data_for_audio
 
 # --- SENSOR DATA FUNCTIONS --- #
 
@@ -221,6 +223,87 @@ def upload_csv_file():
     
     return jsonify({"status": "error", "message": "Unknown error during upload"}), 500
 
-# Serves the static client-side HTML file
+
+
+
+
+def upload_audio_metadata():
+    """
+    API endpoint to scan audio directory and import metadata into database.
+    """
+    try:
+        # Extract metadata from all audio files
+        all_audio = extract_batch_metadata()
+        
+        success_count = 0
+        fail_count = 0
+        errors = []
+        
+        for audio in all_audio:
+            result, msg = insert_audio_data(audio)
+            if result:
+                success_count += 1
+            else:
+                fail_count += 1
+                errors.append(f"{audio['filename']}: {msg}")
+        
+        return jsonify({
+            "status": "completed",
+            "success_count": success_count,
+            "fail_count": fail_count,
+            "errors": errors[:5]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+def get_audio_with_environmental_data():
+    """
+    API endpoint to get audio recording with linked sensor and weather data.
+    Usage: /api/v1/audio/<audio_id>/environmental
+    """
+    audio_id = request.args.get('audio_id')
+    
+    if not audio_id:
+        return jsonify({"error": "audio_id parameter required"}), 400
+    
+    try:
+        conn = get_db_connection(dict_cursor=True)
+        cursor = conn.cursor()
+        
+        # Get audio recording info
+        cursor.execute("SELECT * FROM audiorecording WHERE id = %s", (audio_id,))
+        audio = cursor.fetchone()
+        conn.close()
+        
+        if not audio:
+            return jsonify({"error": "Audio recording not found"}), 404
+        
+        # Get linked sensor and weather data
+        sensor_data = get_sensor_data_for_audio(audio_id)
+        weather_data = get_weather_data_for_audio(audio_id)
+        
+        # Format datetime objects for JSON
+        if isinstance(audio.get('date'), datetime.date):
+            audio['date'] = audio['date'].strftime('%Y-%m-%d')
+        if isinstance(audio.get('start_time'), datetime.datetime):
+            audio['start_time'] = audio['start_time'].strftime('%Y-%m-%d %H:%M:%S')
+        if isinstance(audio.get('end_time'), datetime.datetime):
+            audio['end_time'] = audio['end_time'].strftime('%Y-%m-%d %H:%M:%S')
+        
+        return jsonify({
+            "audio": audio,
+            "sensor_readings": sensor_data,
+            "weather_readings": weather_data,
+            "sensor_count": len(sensor_data),
+            "weather_count": len(weather_data)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+    # Serves the static client-side HTML file
 def index():    
     return render_template('index.html')
