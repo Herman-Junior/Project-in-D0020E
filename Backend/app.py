@@ -3,7 +3,7 @@
 from flask import Flask
 import os
 # Import the route handlers (index, get_sensor_api, and get_weather_api)
-from routes import index, get_sensor_api, get_weather_api, upload_csv_file
+from routes import index, get_sensor_api, get_weather_api, upload_csv_file, upload_audio_metadata, get_audio_with_environmental_data, insert_page, query_page
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)

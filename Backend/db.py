@@ -80,7 +80,6 @@ def insert_sensor_data(data_row):
         if conn:
             conn.close()
 
-
 def insert_weather_data(data_row):
     """
     Inserts a single row of weather data into the WEATHER_DATA table.
@@ -200,8 +199,6 @@ def insert_audio_data(audio_metadata):
         if conn:
             conn.close() 
 
-
-
 def get_sensor_data_for_audio(audio_id):
     """
     Retrieves all sensor data that falls within an audio recording's time range.
@@ -240,7 +237,6 @@ def get_sensor_data_for_audio(audio_id):
     finally:
         if conn:
             conn.close()
-
 
 def get_weather_data_for_audio(audio_id):
     """
