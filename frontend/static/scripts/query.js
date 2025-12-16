@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const endpointMap = {
             'sensor': '/api/v1/sensors',
             'weather': '/api/v1/weather',
-            'combined': '/api/v1/combined' 
+            'combined': '/api/v1/combined' // Pre-existing endpoint name
         };
         
         const endpoint = endpointMap[selectedData];
@@ -43,11 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(url);
             
-            // Handle the specific case for "Combined" which is intentionally not implemented
-            if (selectedData === 'combined' && !response.ok) {
-                resultsDiv.innerHTML = '<p class="info">Combined Data Lookup is not yet implemented by the backend team. Please select Sensor or Weather data.</p>';
-                return;
-            }
+            // NOTE: The previous special "Combined" error handling has been removed.
             
             // Handle successful response with no data (204 No Content)
             if (response.status === 204) {
@@ -70,12 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTable(data, resultsDiv);
             
         } catch (e) {
-            // General catch for network or parsing errors
-            if (selectedData === 'combined') {
-                resultsDiv.innerHTML = '<p class="info">Combined Data Lookup is not yet implemented by the backend team. Please select Sensor or Weather data.</p>';
-            } else {
-                resultsDiv.innerHTML = `<p class="error">Network Error: ${e.message}. Check your server and API endpoints.</p>`;
-            }
+            // General catch for network or parsing errors (applies to all endpoints now)
+            resultsDiv.innerHTML = `<p class="error">Network Error: ${e.message}. Check your server and API endpoints.</p>`;
         }
     }
     

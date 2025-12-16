@@ -1,23 +1,23 @@
 -- 1. Create and select the database
-CREATE DATABASE IF NOT EXISTS weather_Db;
+CREATE DATABASE IF NOT EXISTS WEATHER_DB;
 
-USE weather_Db;
+USE WEATHER_DB;
 
 -- 2. Drop tables in reverse order to clear previous incorrect schema (if they exist)
 DROP TABLE IF EXISTS audioenv_link;
 
-DROP TABLE IF EXISTS audiorecording;
+DROP TABLE IF EXISTS audio_recording;
 
 DROP TABLE IF EXISTS WEATHER_DATA;
 
 DROP TABLE IF EXISTS SENSOR_DATA;
 
-CREATE DATABASE IF NOT EXISTS weather_Db;
+DROP TABLE IF EXISTS ALL_DATA;
 
-USE weather_Db;
+DROP DATABASE IF EXISTS WEATHER_DB;
 
 -- Audio table
-CREATE TABLE audiorecording (
+CREATE TABLE AUDIO_RECORDING (
     id INT AUTO_INCREMENT PRIMARY KEY,
     date DATE,
     start_time DATETIME NOT NULL,
@@ -25,8 +25,9 @@ CREATE TABLE audiorecording (
     file_path TEXT NOT NULL
 );
 
+-- Weather table
 CREATE TABLE WEATHER_DATA (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    weather_id INT AUTO_INCREMENT PRIMARY KEY,
     timestamp DATETIME NOT NULL,
     date DATE,
     time TIME,
@@ -48,3 +49,23 @@ CREATE TABLE SENSOR_DATA (
     time TIME,
     moisture DOUBLE
 );
+-- Combined data table
+CREATE TABLE ALL_DATA (
+    all_data_id INT AUTO_INCREMENT PRIMARY KEY,
+    timestamp DATETIME NOT NULL,
+
+    
+    weather_data_id INT NOT NULL,
+    CONSTRAINT fk_weather
+        FOREIGN KEY (weather_data_id)
+        REFERENCES WEATHER_DATA(weather_id),
+
+    
+    sensor_data_id INT NOT NULL,
+    CONSTRAINT fk_sensor
+        FOREIGN KEY (sensor_data_id)
+        REFERENCES SENSOR_DATA(sensor_id)
+);
+
+INSERT INTO ALL_DATA (timestamp, weather_data_id, sensor_data_id)
+VALUES (NOW(), 1, 1); -- Use an actual timestamp and existing IDs (e.g., 1 and 1)
