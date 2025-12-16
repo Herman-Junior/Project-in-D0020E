@@ -185,10 +185,7 @@ def get_weather_api():
 
 def get_combined_data(start_date=None, end_date=None, limit=500):
     """
-    Retrieves combined data by emulating a FULL OUTER JOIN between 
-    WEATHER_DATA (W) and SENSOR_DATA (S) based on their timestamps.
-    Returns NULL (N/A) for data points where an exact match is not found.
-    This method requires NO linking or ALL_DATA table population.
+    Retrieves data from the combined_data_view.
     """
     conn = None
     try:
@@ -198,80 +195,59 @@ def get_combined_data(start_date=None, end_date=None, limit=500):
 
         cursor = conn.cursor()
 
-        # --- FULL OUTER JOIN Emulation (The Core Query) ---
-        union_query = """
-            -- PART 1: LEFT JOIN (Get all Weather data and matching Sensor data)
+        # Query the View
+        query = """
             SELECT 
-                DATE(W.timestamp) AS `date`, 
-                TIME(W.timestamp) AS `time`,
+                DATE(A.timestamp) AS `date`, 
+                TIME(A.timestamp) AS `time`,
                 W.in_temperature, W.out_temperature, W.in_humidity, W.out_humidity, 
                 W.wind_speed, W.wind_direction, W.daily_rain, W.rain_rate,
-                S.moisture,
-                W.timestamp AS sort_timestamp 
-            FROM WEATHER_DATA W
-            LEFT JOIN SENSOR_DATA S ON W.timestamp = S.timestamp
-            
-            UNION
-            
-            -- PART 2: Records that exist only in SENSOR_DATA (Weather fields are NULL)
-            SELECT 
-                DATE(S.timestamp) AS `date`, 
-                TIME(S.timestamp) AS `time`,
-                NULL, NULL, NULL, NULL, -- Weather fields are NULL 
-                NULL, NULL, NULL, NULL,
-                S.moisture,
-                S.timestamp AS sort_timestamp 
-            FROM SENSOR_DATA S
-            LEFT JOIN WEATHER_DATA W ON S.timestamp = W.timestamp
-            WHERE W.weather_id IS NULL -- Exclude records already covered by PART 1
+                S.moisture
+            FROM ALL_DATA A
+            JOIN WEATHER_DATA W ON A.weather_data_id = W.weather_id
+            JOIN SENSOR_DATA S ON A.sensor_data_id = S.sensor_id
         """
         
-        # --- Filtering and Ordering (Applied to the combined result set) ---
         conditions = []
         params = []
-        
+
+        # Filter by Date
         if start_date:
-            conditions.append("DATE(sort_timestamp) >= %s")
+            conditions.append("date >= %s")
             params.append(start_date)
         
         if end_date:
-            conditions.append("DATE(sort_timestamp) <= %s")
+            conditions.append("date <= %s")
             params.append(end_date)
             
-        # Wrap the UNION query to apply WHERE, ORDER BY, and LIMIT
         if conditions:
-            query = f"SELECT * FROM ({union_query}) AS combined_result WHERE " + " AND ".join(conditions)
-        else:
-            query = f"SELECT * FROM ({union_query}) AS combined_result" 
-        
-        query += f" ORDER BY sort_timestamp DESC LIMIT {limit}"
+            query += " WHERE " + " AND ".join(conditions)
+            
+        # Order is handled by the View, but limit the result set
+        query += f" LIMIT {limit}"
 
         cursor.execute(query, params)
         raw_data = cursor.fetchall()
         
-        # --- FINAL JSON PREP ---
+        # Serialize Date/Time objects to strings
         for row in raw_data:
+            if isinstance(row.get('timestamp'), datetime.datetime):
+                row['timestamp'] = row['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
             
-            # This line removes the full timestamp from the output
-            row.pop('sort_timestamp', None) 
-            
-            # Convert date objects to strings
             if isinstance(row.get('date'), datetime.date):
                 row['date'] = row['date'].strftime('%Y-%m-%d')
 
-            # Convert time/timedelta objects to HH:MM:SS strings
             if isinstance(row.get('time'), datetime.timedelta):
                 total_seconds = int(row['time'].total_seconds())
                 hours = total_seconds // 3600
                 minutes = (total_seconds % 3600) // 60
                 seconds = total_seconds % 60
                 row['time'] = f"{hours:02}:{minutes:02}:{seconds:02}"
-
+                
         return raw_data
 
     except Exception as e:
         print(f"Combined Data Query Error: {e}")
-        # If the error is due to a missing ALL_DATA table, this query will ignore it.
         return [{'error': f"Failed to load combined data: {e}"}]
         
     finally:

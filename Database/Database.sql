@@ -66,6 +66,3 @@ CREATE TABLE ALL_DATA (
         FOREIGN KEY (sensor_data_id)
         REFERENCES SENSOR_DATA(sensor_id)
 );
-
-INSERT INTO ALL_DATA (timestamp, weather_data_id, sensor_data_id)
-VALUES (NOW(), 1, 1); -- Use an actual timestamp and existing IDs (e.g., 1 and 1)
