@@ -169,6 +169,7 @@ def get_latest_weather_data(start_date=None, end_date=None, limit=300):
     return data
 
 def get_weather_api():
+    
     """API endpoint handler for /api/v1/weather."""
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
@@ -180,6 +181,81 @@ def get_weather_api():
         
     return jsonify(weather_data)
 
+# --- COMBINED DATA FUNCTION ---#
+
+def get_combined_data(start_date=None, end_date=None, limit=500):
+    """
+    Retrieves data from the combined_data_view.
+    """
+    conn = None
+    try:
+        conn = get_db_connection(dict_cursor=True)
+        if not conn: 
+            return [{'error': "Database connection failed."}]
+
+        cursor = conn.cursor()
+
+        # Query the View
+        query = "SELECT * FROM combined_data_view"
+        
+        conditions = []
+        params = []
+
+        # Filter by Date
+        if start_date:
+            conditions.append("date >= %s")
+            params.append(start_date)
+        
+        if end_date:
+            conditions.append("date <= %s")
+            params.append(end_date)
+            
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+            
+        # Order is handled by the View, but limit the result set
+        query += f" LIMIT {limit}"
+
+        cursor.execute(query, params)
+        raw_data = cursor.fetchall()
+        
+        # Serialize Date/Time objects to strings
+        for row in raw_data:
+            if isinstance(row.get('timestamp'), datetime.datetime):
+                row['timestamp'] = row['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+            
+            if isinstance(row.get('date'), datetime.date):
+                row['date'] = row['date'].strftime('%Y-%m-%d')
+
+            if isinstance(row.get('time'), datetime.timedelta):
+                total_seconds = int(row['time'].total_seconds())
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
+                row['time'] = f"{hours:02}:{minutes:02}:{seconds:02}"
+                
+        return raw_data
+
+    except Exception as e:
+        print(f"Combined Data Query Error: {e}")
+        return [{'error': f"Failed to load combined data: {e}"}]
+        
+    finally:
+        if conn: conn.close()
+
+def get_combined_api():
+    """API endpoint handler for /api/v1/combined"""
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Fetch data using the new DB function
+    combined_data = get_combined_data(start_date, end_date, limit=200)
+    
+    # Error Handling
+    if combined_data and 'error' in combined_data[0]:
+        return jsonify({'error': combined_data[0]['error']}), 500
+        
+    return jsonify(combined_data)
 # --- UPLOAD FUNCTIONS --- #
 
 def upload_csv_file():
