@@ -19,6 +19,29 @@ def get_db_connection(dict_cursor=False):
         print(f"ERROR: Could not connect to the database. Details: {e}")
         return None
 
+def sync_all_data(timestamp, source_type, source_id):
+    conn = get_db_connection()
+    if not conn: return
+    try:
+        cursor = conn.cursor()
+        # Check if a record already exists for this timestamp
+        cursor.execute("SELECT all_data_id FROM ALL_DATA WHERE timestamp = %s", (timestamp,))
+        existing = cursor.fetchone()
+
+        if existing:
+            # Update the existing row with the new data ID
+            column = "sensor_data_id" if source_type == 'sensor' else "weather_data_id"
+            cursor.execute(f"UPDATE ALL_DATA SET {column} = %s WHERE all_data_id = %s", (source_id, existing[0]))
+        else:
+            # Create a new record with the data we have
+            if source_type == 'sensor':
+                cursor.execute("INSERT INTO ALL_DATA (timestamp, sensor_data_id) VALUES (%s, %s)", (timestamp, source_id))
+            else:
+                cursor.execute("INSERT INTO ALL_DATA (timestamp, weather_data_id) VALUES (%s, %s)", (timestamp, source_id))
+        conn.commit()
+    finally:
+        conn.close()
+
 # ------------------ Sensor Data Insertion ------------------ #
 
 def insert_sensor_data(data_row):
@@ -66,9 +89,12 @@ def insert_sensor_data(data_row):
         
         cursor.execute(query, values)
         conn.commit()
-        
+        last_id = cursor.lastrowid
+
+        sync_all_data(timestamp_value, 'sensor', last_id)
+
         # Returns True and the ID of the new row.
-        return True, cursor.lastrowid
+        return True, last_id
         
     except Exception as e:
         # Log the detailed error
@@ -133,7 +159,11 @@ def insert_weather_data(data_row):
         
         cursor.execute(query, values)
         conn.commit()
-        return True, cursor.lastrowid
+        last_id = cursor.lastrowid
+
+        sync_all_data(timestamp_value, 'weather', last_id)
+
+        return True, last_id
         
     except Exception as e:
         print(f"Weather Data Insertion Error: {e}")

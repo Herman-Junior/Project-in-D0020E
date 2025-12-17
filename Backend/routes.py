@@ -184,72 +184,53 @@ def get_weather_api():
 # --- COMBINED DATA FUNCTION ---#
 
 def get_combined_data(start_date=None, end_date=None, limit=500):
-    """
-    Retrieves data from the combined_data_view.
-    """
     conn = None
     try:
         conn = get_db_connection(dict_cursor=True)
-        if not conn: 
-            return [{'error': "Database connection failed."}]
-
         cursor = conn.cursor()
 
-        # Query the View
+        # LEFT JOIN ensures Weather records show even if Sensor (Moisture) is missing
         query = """
             SELECT 
-                DATE(A.timestamp) AS `date`, 
-                TIME(A.timestamp) AS `time`,
+                W.date, 
+                W.time,
                 W.in_temperature, W.out_temperature, W.in_humidity, W.out_humidity, 
                 W.wind_speed, W.wind_direction, W.daily_rain, W.rain_rate,
                 S.moisture
-            FROM ALL_DATA A
-            JOIN WEATHER_DATA W ON A.weather_data_id = W.weather_id
-            JOIN SENSOR_DATA S ON A.sensor_data_id = S.sensor_id
+            FROM WEATHER_DATA W
+            LEFT JOIN SENSOR_DATA S ON W.timestamp = S.timestamp
         """
         
         conditions = []
         params = []
 
-        # Filter by Date
         if start_date:
-            conditions.append("date >= %s")
+            conditions.append("W.date >= %s")
             params.append(start_date)
-        
         if end_date:
-            conditions.append("date <= %s")
+            conditions.append("W.date <= %s")
             params.append(end_date)
             
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
             
-        # Order is handled by the View, but limit the result set
-        query += f" LIMIT {limit}"
+        # Sort by the Weather timestamp
+        query += f" ORDER BY W.timestamp DESC LIMIT {limit}"
 
         cursor.execute(query, params)
         raw_data = cursor.fetchall()
         
-        # Serialize Date/Time objects to strings
+        # Format for JSON (N/A is handled by query.js if value is null)
         for row in raw_data:
-            if isinstance(row.get('timestamp'), datetime.datetime):
-                row['timestamp'] = row['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-            
             if isinstance(row.get('date'), datetime.date):
                 row['date'] = row['date'].strftime('%Y-%m-%d')
-
             if isinstance(row.get('time'), datetime.timedelta):
                 total_seconds = int(row['time'].total_seconds())
-                hours = total_seconds // 3600
-                minutes = (total_seconds % 3600) // 60
-                seconds = total_seconds % 60
-                row['time'] = f"{hours:02}:{minutes:02}:{seconds:02}"
+                row['time'] = f"{total_seconds // 3600:02}:{(total_seconds % 3600) // 60:02}:00"
                 
         return raw_data
-
     except Exception as e:
-        print(f"Combined Data Query Error: {e}")
-        return [{'error': f"Failed to load combined data: {e}"}]
-        
+        return [{'error': f"Failed to load table: {e}"}]
     finally:
         if conn: conn.close()
 
