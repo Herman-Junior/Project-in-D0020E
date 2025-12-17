@@ -189,48 +189,69 @@ def get_combined_data(start_date=None, end_date=None, limit=500):
         conn = get_db_connection(dict_cursor=True)
         cursor = conn.cursor()
 
-        # LEFT JOIN ensures Weather records show even if Sensor (Moisture) is missing
+        # We use COALESCE(W.col, S.col) to pick whichever table has the data.
+        # This ensures that even if Weather is missing, we see the Sensor's Date/Time.
         query = """
             SELECT 
-                W.date, 
-                W.time,
+                COALESCE(W.date, S.date) AS date,
+                COALESCE(W.time, S.time) AS time,
                 W.in_temperature, W.out_temperature, W.in_humidity, W.out_humidity, 
                 W.wind_speed, W.wind_direction, W.daily_rain, W.rain_rate,
-                S.moisture
+                S.moisture,
+                COALESCE(W.timestamp, S.timestamp) AS sort_ts
             FROM WEATHER_DATA W
             LEFT JOIN SENSOR_DATA S ON W.timestamp = S.timestamp
+            
+            UNION
+            
+            SELECT 
+                COALESCE(W.date, S.date) AS date,
+                COALESCE(W.time, S.time) AS time,
+                W.in_temperature, W.out_temperature, W.in_humidity, W.out_humidity, 
+                W.wind_speed, W.wind_direction, W.daily_rain, W.rain_rate,
+                S.moisture,
+                COALESCE(W.timestamp, S.timestamp) AS sort_ts
+            FROM WEATHER_DATA W
+            RIGHT JOIN SENSOR_DATA S ON W.timestamp = S.timestamp
         """
+        
+        # Build the wrapper query for filtering and sorting
+        final_query = f"SELECT * FROM ({query}) AS combined_result"
         
         conditions = []
         params = []
-
         if start_date:
-            conditions.append("W.date >= %s")
+            conditions.append("date >= %s")
             params.append(start_date)
         if end_date:
-            conditions.append("W.date <= %s")
+            conditions.append("date <= %s")
             params.append(end_date)
             
         if conditions:
-            query += " WHERE " + " AND ".join(conditions)
+            final_query += " WHERE " + " AND ".join(conditions)
             
-        # Sort by the Weather timestamp
-        query += f" ORDER BY W.timestamp DESC LIMIT {limit}"
+        # FIX: Removed 'W.' prefix from the order clause
+        final_query += f" ORDER BY sort_ts DESC LIMIT {limit}"
 
-        cursor.execute(query, params)
+        cursor.execute(final_query, params)
         raw_data = cursor.fetchall()
         
-        # Format for JSON (N/A is handled by query.js if value is null)
+        # Serialization logic (converts DB objects to strings for the browser)
         for row in raw_data:
             if isinstance(row.get('date'), datetime.date):
                 row['date'] = row['date'].strftime('%Y-%m-%d')
             if isinstance(row.get('time'), datetime.timedelta):
                 total_seconds = int(row['time'].total_seconds())
                 row['time'] = f"{total_seconds // 3600:02}:{(total_seconds % 3600) // 60:02}:00"
+            
+            # Remove the sorting helper before sending to frontend
+            if 'sort_ts' in row:
+                del row['sort_ts']
                 
         return raw_data
     except Exception as e:
-        return [{'error': f"Failed to load table: {e}"}]
+        print(f"Combined Query Error: {e}")
+        return [{'error': str(e)}]
     finally:
         if conn: conn.close()
 

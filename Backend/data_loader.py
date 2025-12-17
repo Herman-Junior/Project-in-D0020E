@@ -150,34 +150,3 @@ def process_csv_file(filepath):
 
     except Exception as e:
         return {"status": "error", "message": f"Fatal CSV processing error: {str(e)}"}
-
-def sync_all_data(timestamp, source_type, source_id):
-    """
-    Checks if a matching timestamp exists in the partner table 
-    and links them in the ALL_DATA table.
-    """
-    conn = get_db_connection()
-    if not conn: return
-    try:
-        cursor = conn.cursor()
-        if source_type == 'sensor':
-            # Check if weather data exists for this timestamp
-            cursor.execute("SELECT weather_id FROM WEATHER_DATA WHERE timestamp = %s", (timestamp,))
-            match = cursor.fetchone()
-            if match:
-                cursor.execute(
-                    "INSERT IGNORE INTO ALL_DATA (timestamp, weather_data_id, sensor_data_id) VALUES (%s, %s, %s)",
-                    (timestamp, match[0], source_id)
-                )
-        else: # source_type == 'weather'
-            # Check if sensor data exists for this timestamp
-            cursor.execute("SELECT sensor_id FROM SENSOR_DATA WHERE timestamp = %s", (timestamp,))
-            match = cursor.fetchone()
-            if match:
-                cursor.execute(
-                    "INSERT IGNORE INTO ALL_DATA (timestamp, weather_data_id, sensor_data_id) VALUES (%s, %s, %s)",
-                    (timestamp, source_id, match[0])
-                )
-        conn.commit()
-    finally:
-        conn.close()
