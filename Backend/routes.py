@@ -313,34 +313,28 @@ def upload_csv_file():
     return jsonify({"status": "error", "message": "Unknown error during upload"}), 500
 
 def upload_audio_metadata():
-    """
-    API endpoint to scan audio directory and import metadata into database.
-    """
-    try:
-        # Extract metadata from all audio files
-        all_audio = extract_batch_metadata()
-        
-        success_count = 0
-        fail_count = 0
-        errors = []
-        
-        for audio in all_audio:
-            result, msg = insert_audio_data(audio)
-            if result:
-                success_count += 1
-            else:
-                fail_count += 1
-                errors.append(f"{audio['filename']}: {msg}")
-        
-        return jsonify({
-            "status": "completed",
-            "success_count": success_count,
-            "fail_count": fail_count,
-            "errors": errors[:5]
-        }), 200
-        
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    if 'file' not in request.files:
+        return jsonify({"error": "No file"}), 400
+    
+    file = request.files['file']
+    from config import AUDIO_DIRECTORY
+    
+    # Define the destination path
+    filepath = os.path.join(AUDIO_DIRECTORY, file.filename)
+    
+    # CRITICAL: This saves the file to your 'audio_files' folder
+    file.save(filepath) 
+    
+    # Now process it
+    from audiodata import extract_audio_metadata
+    metadata = extract_audio_metadata(filepath)
+    
+    if metadata:
+        from db import insert_audio_data
+        success, result = insert_audio_data(metadata)
+        return jsonify({"status": "success", "audio_id": result})
+    
+    return jsonify({"error": "Filename does not match required date format"}), 400
 
 def get_audio_with_environmental_data():
     """
@@ -398,3 +392,6 @@ def insert_page():
 
 def query_page():
     return render_template('query.html')
+
+def audio_page():
+    return render_template('audio.html')

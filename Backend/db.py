@@ -2,14 +2,8 @@
 import pymysql
 import pymysql.cursors
 import datetime # Needed for UNIX timestamp conversion
+from config import *
 
-# Centralized configuration for MySQL database
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '031021', # Your actual password
-    'database': 'Weather_Db'
-}
 
 def get_db_connection(dict_cursor=False):
     try:
@@ -205,7 +199,7 @@ def insert_audio_data(audio_metadata):
         # SQL QUERY
 
         query = """
-            INSERT INTO audiorecording (`date`, `start_time`, `end_time`, `file_path`)
+            INSERT INTO AUDIO_RECORDING (`date`, start_time, end_time, file_path)
             VALUES (%s, %s, %s, %s)
         """
         

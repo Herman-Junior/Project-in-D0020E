@@ -4,10 +4,7 @@ import re
 from datetime import datetime
 from config import AUDIO_DIRECTORY
 
-
-
 def extract_audio_metadata(file_path):
-
     try:
         # check if exists
         if not os.path.exists(file_path):
@@ -24,7 +21,7 @@ def extract_audio_metadata(file_path):
         cleaned_name = os.path.splitext(filename)[0]
 
         # YYYY_MM_DD_HH_MM_SS format
-        format = r'(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})'
+        format = r'(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})'
         match = re.search(format, cleaned_name)
 
         if match:
@@ -58,9 +55,7 @@ def extract_audio_metadata(file_path):
         return None
     
 
-def extract_batch_metadata(audio_directory):
-
-    
+def extract_batch_metadata(audio_directory=None):
     if audio_directory is None:
         audio_directory = AUDIO_DIRECTORY
     
