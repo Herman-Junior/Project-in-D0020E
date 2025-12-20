@@ -1,22 +1,14 @@
--- 1. Create and select the database
-CREATE DATABASE IF NOT EXISTS WEATHER_DB;
-
-USE WEATHER_DB;
-
--- 2. Drop tables in reverse order to clear previous incorrect schema (if they exist)
-DROP TABLE IF EXISTS audioenv_link;
-
-DROP TABLE IF EXISTS audio_recording;
-
-DROP TABLE IF EXISTS WEATHER_DATA;
-
-DROP TABLE IF EXISTS SENSOR_DATA;
-
-DROP TABLE IF EXISTS ALL_DATA;
-
+-- 1. Completely remove the database if it exists
+-- This deletes all tables, data, and constraints in one go.
 DROP DATABASE IF EXISTS WEATHER_DB;
 
--- Audio table
+-- 2. Re-create the database
+CREATE DATABASE WEATHER_DB;
+USE WEATHER_DB;
+
+-- 3. Re-create the tables in the correct order
+-- (Parent tables must be created before Child tables that reference them)
+
 CREATE TABLE AUDIO_RECORDING (
     id INT AUTO_INCREMENT PRIMARY KEY,
     date DATE,
@@ -25,7 +17,6 @@ CREATE TABLE AUDIO_RECORDING (
     file_path TEXT NOT NULL
 );
 
--- Weather table
 CREATE TABLE WEATHER_DATA (
     weather_id INT AUTO_INCREMENT PRIMARY KEY,
     timestamp DATETIME NOT NULL,
@@ -36,12 +27,11 @@ CREATE TABLE WEATHER_DATA (
     in_humidity INT,
     out_humidity INT,
     wind_speed DOUBLE,
-    wind_direction VARCHAR(10), -- e.g., 'N', 'SW'
+    wind_direction VARCHAR(10),
     daily_rain DOUBLE,
     rain_rate DOUBLE
 );
 
--- sensors table (humidity + temperature)
 CREATE TABLE SENSOR_DATA (
     sensor_id INT AUTO_INCREMENT PRIMARY KEY,
     timestamp DATETIME NOT NULL,
@@ -49,19 +39,18 @@ CREATE TABLE SENSOR_DATA (
     time TIME,
     moisture DOUBLE
 );
--- Combined data table
+
+-- This table has Foreign Keys, so it must be created LAST
 CREATE TABLE ALL_DATA (
     all_data_id INT AUTO_INCREMENT PRIMARY KEY,
     timestamp DATETIME NOT NULL,
-
-    
-    weather_data_id INT NOT NULL,
+    -- Changed to NULL to allow sensor data to be inserted without weather data
+    weather_data_id INT NULL, 
     CONSTRAINT fk_weather
         FOREIGN KEY (weather_data_id)
         REFERENCES WEATHER_DATA(weather_id),
-
-    
-    sensor_data_id INT NOT NULL,
+    -- Changed to NULL to allow weather data to be inserted without sensor data
+    sensor_data_id INT NULL,
     CONSTRAINT fk_sensor
         FOREIGN KEY (sensor_data_id)
         REFERENCES SENSOR_DATA(sensor_id)
