@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather & Sensor Data Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* --- Upload Styles --- */
+        .upload-container {
+            border: 2px solid #ccc;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+        }
+        .upload-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap; /* Preserve formatting of the output */
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .success { 
+            background-color: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb; 
+        }
+        .error { 
+            background-color: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb; 
+        }
+        
+        /* --- API Test Styles --- */
+        .api-test-container {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+        }
+        .api-section {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Environment Data Dashboard Mockup</h1>
+
+        <div style="display: flex;">
+            <div style="background: rgb(255, 255, 255); width: 50%; padding: 20px;">
+                <div class="upload-container">
+                    <h2>📤 Upload CSV Data</h2>
+                    <p>Use this form to upload and process a CSV file for either **Sensor** (2 columns) or **Weather** (9 columns).</p>
+                    <form id="uploadForm">
+                        <label for="csvFile">Choose CSV File:</label>
+                        <input type="file" id="csvFile" name="file" accept=".csv" required>
+                        <button type="submit">Upload and Process</button>
+                    </form>
+                    <div id="uploadResult" class="upload-result"></div>
+                </div>
+            </div>
+            <div style="background: rgb(255, 255, 255); width: 50%; padding: 20px;">
+                <div class="upload-container">
+                    <h2>🎵 Upload Audio Data</h2>
+                    <p>Use this form to upload and process an audio file (WAV format).</p>
+                    <form id="uploadAudioForm">
+                        <label for="audioFile">Choose Audio File:</label>
+                        <input type="file" id="audioFile" name="file" accept='.wav,.mp3' required>
+                        <button type="submit">Upload and Process</button>
+                    </form>
+                    <div id="uploadAudioResult" class="upload-result"></div>
+                </div>
+            </div>
+        </div>
+        
+        <hr/>
+
+        <div class="api-test-container">
+            <h2>🔍 API Test Endpoints</h2>
+            <p>Click the buttons below to test the data retrieval endpoints and see the raw JSON output.</p>
+
+            <div class="api-section">
+                <h3>Sensor Data (`/api/v1/sensors`)</h3>
+                <button onclick="fetchApiData('/api/v1/sensors', 'sensorDataOutput')">Get Latest Sensor Data</button>
+                <pre id="sensorDataOutput"></pre>
+            </div>
+
+            <div class="api-section">
+                <h3>Weather Data (`/api/v1/weather`)</h3>
+                <button onclick="fetchApiData('/api/v1/weather', 'weatherDataOutput')">Get Latest Weather Data</button>
+                <pre id="weatherDataOutput"></pre>
+            </div>
+            
+            <div class="api-section">
+                <h3>Audiodata (`/api/v1/audio`)</h3>
+                <button onclick="fetchApiData('/api/v1/audio', 'audioDataOutput')">Get Latest Audio Data</button>
+                <pre id="audioDataOutput"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CSV Upload Logic ---
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+
+            const fileInput = document.getElementById('csvFile');
+            const resultDiv = document.getElementById('uploadResult');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                resultDiv.className = 'upload-result error';
+                resultDiv.textContent = 'Please select a file.';
+                return;
+            }
+
+            resultDiv.className = 'upload-result';
+            resultDiv.textContent = 'Uploading and processing...';
+            
+            const formData = new FormData();
+            // 'file' must match the key used in request.files['file'] in routes.py
+            formData.append('file', file); 
+
+            try {
+                const response = await fetch('/api/v1/upload/csv', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'completed') {
+                    resultDiv.className = 'upload-result success';
+                    resultDiv.textContent = `
+    Upload Successful! (Type: ${file.name.includes('weather') ? 'Weather' : 'Sensor'})
+    Status: ${result.status}
+    Success Count: ${result.success_count}
+    Failed Count: ${result.fail_count}
+    Message: ${result.message}
+                    `;
+                } else {
+                    resultDiv.className = 'upload-result error';
+                    resultDiv.textContent = `
+    Processing Failed!
+    Status: ${result.status || response.status}
+    Error: ${result.message || 'Unknown server error'}
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'upload-result error';
+                resultDiv.textContent = `Network Error: ${error.message}`;
+            }
+        });
+
+        // --- API Fetch Logic ---
+        async function fetchApiData(url, outputId) {
+            const outputDiv = document.getElementById(outputId);
+            outputDiv.textContent = 'Fetching data...';
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Display pretty-printed JSON
+                    outputDiv.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    outputDiv.textContent = `Error: ${data.error || 'Failed to fetch data'}`;
+                }
+            } catch (error) {
+                outputDiv.textContent = `Network Error: ${error.message}`;
+            }
+        }
+    </script>
+    
+    <script>
+    // --- Audio Upload Logic ---
+    // 1. Correctly select elements based on their IDs from your HTML
+    const audioUploadForm = document.getElementById('uploadAudioForm');    // Form ID
+    const audioFileInput = document.getElementById('audioFile');          // Input ID (Corrected from audioFileInput)
+    const audioResultDiv = document.getElementById('uploadAudioResult');  // Result Div ID
+
+    // 2. Attach the single submit listener directly to the form
+    audioUploadForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const file = audioFileInput.files[0];
+        if (!file) {
+            audioResultDiv.className = 'upload-result error';
+            audioResultDiv.textContent = 'Please select an audio file.';
+            return;
+        }
+    
+        // Use FormData for file uploads
+        const formData = new FormData();
+        formData.append('file', file);
+    
+        audioResultDiv.className = 'upload-result';
+        audioResultDiv.textContent = `Uploading file: ${file.name}...`;
+
+        try {
+            const response = await fetch('/api/v1/audio/upload', {
+                method: 'POST',
+                // Do NOT set Content-Type with FormData
+                body: formData 
+            });
+
+            const result = await response.json();
+
+            // Check for success status from the Flask API
+            if (response.ok && (result.status === 'success' || result.status === 'completed')) {
+                audioResultDiv.className = 'upload-result success';
+                audioResultDiv.textContent = `
+Upload Successful!
+Message: ${result.message}
+File Path: ${result.path || 'N/A'}
+                `;
+                // Clear the file input after successful upload
+                audioFileInput.value = ''; 
+            } else {
+                audioResultDiv.className = 'upload-result error';
+                audioResultDiv.textContent = `
+Upload Failed!
+Status: ${result.status || response.status}
+Error: ${result.message || 'Unknown server error'}
+                `;
+            }
+        } catch (error) {
+            audioResultDiv.className = 'upload-result error';
+            audioResultDiv.textContent = `Network Error: ${error.message}`;
+        }
+    });
+
+    // --- API Fetch Logic (Keep this separate) ---
+    async function fetchApiData(url, outputId) {
+        const outputDiv = document.getElementById(outputId);
+        outputDiv.textContent = 'Fetching data...';
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (response.ok) {
+                outputDiv.textContent = JSON.stringify(data, null, 2);
+            } else {
+                outputDiv.textContent = `Error: ${data.error || 'Failed to fetch data'}`;
+            }
+        } catch (error) {
+            outputDiv.textContent = `Network Error: ${error.message}`;
+        }
+    }
+</script>
+    
+</body>
+</html>
