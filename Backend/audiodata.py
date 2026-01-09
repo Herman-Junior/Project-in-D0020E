@@ -5,10 +5,7 @@ from datetime import datetime
 from config import AUDIO_DIRECTORY
 from db import get_db_connection
 
-
-
 def extract_audio_metadata(file_path):
-
     try:
         # check if exists
         if not os.path.exists(file_path):
@@ -25,7 +22,7 @@ def extract_audio_metadata(file_path):
         cleaned_name = os.path.splitext(filename)[0]
 
         # YYYY_MM_DD_HH_MM_SS format
-        format = r'(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})'
+        format = r'(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})'
         match = re.search(format, cleaned_name)
 
         if match:
@@ -59,9 +56,7 @@ def extract_audio_metadata(file_path):
         return None
     
 
-def extract_batch_metadata(audio_directory):
-
-    
+def extract_batch_metadata(audio_directory=None):
     if audio_directory is None:
         audio_directory = AUDIO_DIRECTORY
     
@@ -82,66 +77,3 @@ def extract_batch_metadata(audio_directory):
                 metadata_list.append(metadata)
     return metadata_list
 
-
-# test
-
-""" if __name__ == "__main__":
-    # Example 1: Process all audio files in a directory
-    audio_dir = r"C:\\Users\\herma\Videos\\4K Video Downloader"
-    all_metadata = extract_batch_metadata(audio_dir)  # Fixed: was 'audio_directory'
-    
-    print(f"Found {len(all_metadata)} audio files\n")
-    
-    # Loop through all audio files found
-    for metadata in all_metadata:
-        print(f"Filename: {metadata['filename']}")
-        print(f"Duration: {metadata['duration']:.2f} seconds")
-        print(f"Full path: {metadata['filepath']}")
-        print(f"Start timestamp: {metadata['start_timestamp']}")
-        print(f"End timestamp: {metadata['end_timestamp']}")
-        print("-" * 50)
-
- """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-""" MIT License
-
-Copyright (c) 2014-2025 Tom Wallroth, Mat (mathiascode), et al.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE. """

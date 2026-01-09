@@ -2,6 +2,7 @@
 import pymysql
 import pymysql.cursors
 import datetime # Needed for UNIX timestamp conversion
+from config import *
 
 # Centralized configuration for MySQL database
 DB_CONFIG = {
@@ -18,6 +19,29 @@ def get_db_connection(dict_cursor=False):
     except Exception as e:
         print(f"ERROR: Could not connect to the database. Details: {e}")
         return None
+
+def sync_all_data(timestamp, source_type, source_id):
+    conn = get_db_connection()
+    if not conn: return
+    try:
+        cursor = conn.cursor()
+        # Check if a record already exists for this timestamp
+        cursor.execute("SELECT all_data_id FROM ALL_DATA WHERE timestamp = %s", (timestamp,))
+        existing = cursor.fetchone()
+
+        if existing:
+            # Update the existing row with the new data ID
+            column = "sensor_data_id" if source_type == 'sensor' else "weather_data_id"
+            cursor.execute(f"UPDATE ALL_DATA SET {column} = %s WHERE all_data_id = %s", (source_id, existing[0]))
+        else:
+            # Create a new record with the data we have
+            if source_type == 'sensor':
+                cursor.execute("INSERT INTO ALL_DATA (timestamp, sensor_data_id) VALUES (%s, %s)", (timestamp, source_id))
+            else:
+                cursor.execute("INSERT INTO ALL_DATA (timestamp, weather_data_id) VALUES (%s, %s)", (timestamp, source_id))
+        conn.commit()
+    finally:
+        conn.close()
 
 # ------------------ Sensor Data Insertion ------------------ #
 
@@ -66,9 +90,12 @@ def insert_sensor_data(data_row):
         
         cursor.execute(query, values)
         conn.commit()
-        
+        last_id = cursor.lastrowid
+
+        sync_all_data(timestamp_value, 'sensor', last_id)
+
         # Returns True and the ID of the new row.
-        return True, cursor.lastrowid
+        return True, last_id
         
     except Exception as e:
         # Log the detailed error
@@ -79,7 +106,6 @@ def insert_sensor_data(data_row):
         # Ensures the connection is closed
         if conn:
             conn.close()
-
 
 def insert_weather_data(data_row):
     """
@@ -134,7 +160,11 @@ def insert_weather_data(data_row):
         
         cursor.execute(query, values)
         conn.commit()
-        return True, cursor.lastrowid
+        last_id = cursor.lastrowid
+
+        sync_all_data(timestamp_value, 'weather', last_id)
+
+        return True, last_id
         
     except Exception as e:
         print(f"Weather Data Insertion Error: {e}")
@@ -144,87 +174,140 @@ def insert_weather_data(data_row):
         if conn:
             conn.close()
 
-# ------------------ Audio Recording Insertion ------------------ #
-def insert_audio_recording(date, start_time, end_time, file_path):
-    """
-    Inserts a single audio recording record into the audiorecording table.
+# AUDDIODATA FUNCTION
+
+def insert_audio_data(audio_metadata):
     
-    :param date: datetime.date object
-    :param start_time: datetime.datetime object
-    :param end_time: datetime.datetime object
-    :param file_path: Path to the saved file
-    :return: Tuple (success_boolean, message_or_last_insert_id)
-    """
     conn = None
     try:
         conn = get_db_connection()
         if not conn:
-            return False, "Database connection failed."
-
-        cursor = conn.cursor()
+            return False, "Database connection failed"
         
+        cursor = conn.cursor()
+
+        # convert UNIX timecode to datetime
+        start_timestamp = audio_metadata.get('start_timestamp')
+        end_timestamp = audio_metadata.get('end_timestamp')
+
+        if isinstance(start_timestamp, (int, float)):
+            start_dt = datetime.datetime.fromtimestamp(start_timestamp)
+            start_time = start_dt.strftime('%Y-%m-%d %H:%M:%S')
+            date_value = start_dt.strftime('%Y-%m-%d')
+        else:
+            return False, "Invalid start_timestamp"
+        
+        if isinstance(end_timestamp, (int, float)):
+            end_dt = datetime.datetime.fromtimestamp(end_timestamp)
+            end_time = end_dt.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            return False, "Invalid end_timestamp"
+        
+        # SQL QUERY
+
         query = """
-            INSERT INTO audiorecording 
-            (`date`, start_time, end_time, file_path)
+            INSERT INTO AUDIO_RECORDING (`date`, start_time, end_time, file_path)
             VALUES (%s, %s, %s, %s)
         """
         
-        # MySQL/pymysql can handle Python date/datetime objects directly
         values = (
-            date,
+            date_value,
             start_time,
             end_time,
-            file_path
+            audio_metadata.get('filepath')
         )
         
         cursor.execute(query, values)
         conn.commit()
-        last_id = cursor.lastrowid
         
-        return True, last_id
+        return True, cursor.lastrowid
+
+    except Exception as e:
+        print(f"Audio Data Insertion Error: {e}")
+        return False, f"Insertion failed: {e}"
+        
+    finally:
+        if conn:
+            conn.close() 
+
+def get_sensor_data_for_audio(audio_id):
+    """
+    Retrieves all sensor data that falls within an audio recording's time range.
+    
+    :param audio_id: ID of the audio recording
+    :return: List of sensor data dictionaries
+    """
+    conn = None
+    try:
+        conn = get_db_connection(dict_cursor=True)
+        if not conn:
+            return []
+
+        cursor = conn.cursor()
+        
+        # Query to get sensor data within the audio recording period
+        query = """
+            SELECT 
+                s.timestamp,
+                s.date,
+                s.time,
+                s.moisture
+            FROM SENSOR_DATA s
+            JOIN audiorecording a ON s.timestamp BETWEEN a.start_time AND a.end_time
+            WHERE a.id = %s
+            ORDER BY s.timestamp ASC
+        """
+        
+        cursor.execute(query, (audio_id,))
+        return cursor.fetchall()
         
     except Exception as e:
-        # Rollback changes if an error occurs
-        if conn:
-            conn.rollback()
-        print(f"Database Error in insert_audio_recording: {e}")
-        return False, str(e)
+        print(f"Error querying sensor data for audio: {e}")
+        return []
         
     finally:
         if conn:
             conn.close()
 
-            
-
-def get_latest_audio_data(limit=10):
+def get_weather_data_for_audio(audio_id):
     """
-    Retrieves the latest audio recording data from the audiorecording table.
-    Uses a dictionary cursor to return data with column names as keys.
+    Retrieves all weather data that falls within an audio recording's time range.
+    
+    :param audio_id: ID of the audio recording
+    :return: List of weather data dictionaries
     """
     conn = None
     try:
-        # Use DictCursor to get results as dictionaries for easy processing
-        conn = get_db_connection(dict_cursor=True) 
+        conn = get_db_connection(dict_cursor=True)
         if not conn:
             return []
 
         cursor = conn.cursor()
         
         query = """
-            SELECT id, date, start_time, end_time, file_path 
-            FROM audiorecording 
-            ORDER BY id DESC 
-            LIMIT %s
+            SELECT 
+                w.timestamp,
+                w.date,
+                w.time,
+                w.in_temperature,
+                w.out_temperature,
+                w.in_humidity,
+                w.out_humidity,
+                w.wind_speed,
+                w.wind_direction,
+                w.daily_rain,
+                w.rain_rate
+            FROM WEATHER_DATA w
+            JOIN audiorecording a ON w.timestamp BETWEEN a.start_time AND a.end_time
+            WHERE a.id = %s
+            ORDER BY w.timestamp ASC
         """
         
-        cursor.execute(query, (limit,))
-        data = cursor.fetchall()
-        
-        # Data returned here contains datetime objects
-        return data
+        cursor.execute(query, (audio_id,))
+        return cursor.fetchall()
         
     except Exception as e:
-        print(f"Database Error in get_latest_audio_data: {e}")
+        print(f"Error querying weather data for audio: {e}")
         return []
         
     finally:

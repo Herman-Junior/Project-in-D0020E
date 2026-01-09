@@ -8,13 +8,13 @@ from datetime import datetime, date, timedelta
 import datetime
 import pymysql.cursors
 import os 
-
-
-
+import datetime 
+from audiodata import extract_batch_metadata
+from db import insert_audio_data, get_sensor_data_for_audio,get_weather_data_for_audio
 
 # --- SENSOR DATA FUNCTIONS --- #
 
-def get_latest_sensor_data(start_date=None, end_date=None, limit=50):
+def get_latest_sensor_data(start_date=None, end_date=None, limit=300):
     """
     Retrieves SENSOR_DATA, formatted to show ONLY YYYY-MM-DD Date, Time (HH:MM:SS),
     and Moisture. Handles Python object serialization issues.
@@ -101,7 +101,7 @@ def get_sensor_api():
 
 # --- WEATHER DATA FUNCTIONS --- #
 
-def get_latest_weather_data(start_date=None, end_date=None, limit=50):
+def get_latest_weather_data(start_date=None, end_date=None, limit=300):
     """
     Retrieves WEATHER_DATA, handling date/time formatting and serialization issues.
     It selects all detailed weather metrics along with the date and time.
@@ -174,6 +174,7 @@ def get_latest_weather_data(start_date=None, end_date=None, limit=50):
     return data
 
 def get_weather_api():
+    
     """API endpoint handler for /api/v1/weather."""
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
@@ -252,6 +253,94 @@ def insert_audio_batch_api():
     except Exception as e:
         print(f"Audio Batch API Error: {e}")
         return jsonify({"status": "error", "message": f"Server processing failed: {e}"}), 500
+
+# --- COMBINED DATA FUNCTION ---#
+
+def get_combined_data(start_date=None, end_date=None, limit=500):
+    conn = None
+    try:
+        conn = get_db_connection(dict_cursor=True)
+        cursor = conn.cursor()
+
+        # We use COALESCE(W.col, S.col) to pick whichever table has the data.
+        # This ensures that even if Weather is missing, we see the Sensor's Date/Time.
+        query = """
+            SELECT 
+                COALESCE(W.date, S.date) AS date,
+                COALESCE(W.time, S.time) AS time,
+                W.in_temperature, W.out_temperature, W.in_humidity, W.out_humidity, 
+                W.wind_speed, W.wind_direction, W.daily_rain, W.rain_rate,
+                S.moisture,
+                COALESCE(W.timestamp, S.timestamp) AS sort_ts
+            FROM WEATHER_DATA W
+            LEFT JOIN SENSOR_DATA S ON W.timestamp = S.timestamp
+            
+            UNION
+            
+            SELECT 
+                COALESCE(W.date, S.date) AS date,
+                COALESCE(W.time, S.time) AS time,
+                W.in_temperature, W.out_temperature, W.in_humidity, W.out_humidity, 
+                W.wind_speed, W.wind_direction, W.daily_rain, W.rain_rate,
+                S.moisture,
+                COALESCE(W.timestamp, S.timestamp) AS sort_ts
+            FROM WEATHER_DATA W
+            RIGHT JOIN SENSOR_DATA S ON W.timestamp = S.timestamp
+        """
+        
+        # Build the wrapper query for filtering and sorting
+        final_query = f"SELECT * FROM ({query}) AS combined_result"
+        
+        conditions = []
+        params = []
+        if start_date:
+            conditions.append("date >= %s")
+            params.append(start_date)
+        if end_date:
+            conditions.append("date <= %s")
+            params.append(end_date)
+            
+        if conditions:
+            final_query += " WHERE " + " AND ".join(conditions)
+            
+        # FIX: Removed 'W.' prefix from the order clause
+        final_query += f" ORDER BY sort_ts DESC LIMIT {limit}"
+
+        cursor.execute(final_query, params)
+        raw_data = cursor.fetchall()
+        
+        # Serialization logic (converts DB objects to strings for the browser)
+        for row in raw_data:
+            if isinstance(row.get('date'), datetime.date):
+                row['date'] = row['date'].strftime('%Y-%m-%d')
+            if isinstance(row.get('time'), datetime.timedelta):
+                total_seconds = int(row['time'].total_seconds())
+                row['time'] = f"{total_seconds // 3600:02}:{(total_seconds % 3600) // 60:02}:00"
+            
+            # Remove the sorting helper before sending to frontend
+            if 'sort_ts' in row:
+                del row['sort_ts']
+                
+        return raw_data
+    except Exception as e:
+        print(f"Combined Query Error: {e}")
+        return [{'error': str(e)}]
+    finally:
+        if conn: conn.close()
+
+def get_combined_api():
+    """API endpoint handler for /api/v1/combined"""
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Fetch data using the new DB function
+    combined_data = get_combined_data(start_date, end_date, limit=200)
+    
+    # Error Handling
+    if combined_data and 'error' in combined_data[0]:
+        return jsonify({'error': combined_data[0]['error']}), 500
+        
+    return jsonify(combined_data)
 
 # --- UPLOAD FUNCTIONS --- #
 
@@ -386,6 +475,86 @@ def upload_csv_file():
     
     return jsonify({"status": "error", "message": "Unknown error during upload"}), 500
 
-# Serves the static client-side HTML file
+def upload_audio_metadata():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file"}), 400
+    
+    file = request.files['file']
+    from config import AUDIO_DIRECTORY
+    
+    # Define the destination path
+    filepath = os.path.join(AUDIO_DIRECTORY, file.filename)
+    
+    # CRITICAL: This saves the file to your 'audio_files' folder
+    file.save(filepath) 
+    
+    # Now process it
+    from audiodata import extract_audio_metadata
+    metadata = extract_audio_metadata(filepath)
+    
+    if metadata:
+        from db import insert_audio_data
+        success, result = insert_audio_data(metadata)
+        return jsonify({"status": "success", "audio_id": result})
+    
+    return jsonify({"error": "Filename does not match required date format"}), 400
+
+def get_audio_with_environmental_data():
+    """
+    API endpoint to get audio recording with linked sensor and weather data.
+    Usage: /api/v1/audio/<audio_id>/environmental
+    """
+    audio_id = request.args.get('audio_id')
+    
+    if not audio_id:
+        return jsonify({"error": "audio_id parameter required"}), 400
+    
+    try:
+        conn = get_db_connection(dict_cursor=True)
+        cursor = conn.cursor()
+        
+        # Get audio recording info
+        cursor.execute("SELECT * FROM audiorecording WHERE id = %s", (audio_id,))
+        audio = cursor.fetchone()
+        conn.close()
+        
+        if not audio:
+            return jsonify({"error": "Audio recording not found"}), 404
+        
+        # Get linked sensor and weather data
+        sensor_data = get_sensor_data_for_audio(audio_id)
+        weather_data = get_weather_data_for_audio(audio_id)
+        
+        # Format datetime objects for JSON
+        if isinstance(audio.get('date'), datetime.date):
+            audio['date'] = audio['date'].strftime('%Y-%m-%d')
+        if isinstance(audio.get('start_time'), datetime.datetime):
+            audio['start_time'] = audio['start_time'].strftime('%Y-%m-%d %H:%M:%S')
+        if isinstance(audio.get('end_time'), datetime.datetime):
+            audio['end_time'] = audio['end_time'].strftime('%Y-%m-%d %H:%M:%S')
+        
+        return jsonify({
+            "audio": audio,
+            "sensor_readings": sensor_data,
+            "weather_readings": weather_data,
+            "sensor_count": len(sensor_data),
+            "weather_count": len(weather_data)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+    # Serves the static client-side HTML file
+
 def index():    
-    return render_template('index.html')
+    return render_template('home.html')
+
+def insert_page():
+    return render_template('insert.html')
+
+def query_page():
+    return render_template('query.html')
+
+def audio_page():
+    return render_template('audio.html')
