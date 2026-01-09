@@ -1,5 +1,5 @@
 from flask import jsonify, render_template, request, send_from_directory, send_file
-from db import get_db_connection, get_latest_audio_data, insert_audio_recording
+from db import get_db_connection, insert_audio_data, get_sensor_data_for_audio,get_weather_data_for_audio
 from audiodata import extract_audio_metadata
 from data_loader import process_csv_file
 from werkzeug.utils import secure_filename
