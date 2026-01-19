@@ -1,38 +1,49 @@
-// static/scripts/audio.js
-
 document.addEventListener('DOMContentLoaded', () => {
-    loadAudioList();
-});
+    // Select the panel where we will display the results
+    const panel = document.getElementById('correlation-panel');
+    const content = document.getElementById('correlation-content');
+    const title = document.getElementById('selected-audio-title');
 
-async function loadAudioList() {
-    const container = document.getElementById('audio-list-viewport');
+    // Attach click events to all audio items
+    const audioItems = document.querySelectorAll('.audio-item');
     
-    try {
-        const response = await fetch('/api/v1/audio/list');
-        const recordings = await response.json();
+    audioItems.forEach(item => {
+        item.addEventListener('click', async () => {
+            const audioId = item.getAttribute('data-audio-id');
+            const filename = item.getAttribute('data-filename');
 
-        if (!recordings || recordings.length === 0) {
-            container.innerHTML = '<div class="container upload-box"><p>No audio recordings found.</p></div>';
-            return;
-        }
+            // Show the panel and a loading state
+            panel.style.display = 'block';
+            title.innerText = `Correlated Data for: ${filename}`;
+            content.innerHTML = '<p class="status-message info">Fetching environmental data...</p>';
 
-        // Map through recordings to create boxes that look exactly like your "Upload" boxes
-        container.innerHTML = recordings.map(record => `
-            <div class="container upload-box audio-item" data-audio-id="${record.id}" data-filename="${record.filename}">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h3 style="margin: 0; color: var(--primary-text-clr);">${record.filename}</h3>
-                        <small style="color: var(--secondary-text-clr);">${record.date} at ${record.start_time}</small>
-                    </div>
-                    <span class="info-tag">Click to Correlate</span>
-                </div>
-            </div>
-        `).join('');
+            try {
+                // CALLS EXISTING API: /api/v1/audio/environmental
+                // This utilizes the get_audio_with_environmental_data route
+                const response = await fetch(`/api/v1/audio/environmental?audio_id=${audioId}`);
+                const data = await response.json();
 
-        // Attach clicks after rendering
-        setupClickHandlers();
+                if (data && data.length > 0) {
+                    // Create a simple list or table of the correlated sensor data
+                    renderData(data, content);
+                } else {
+                    content.innerHTML = '<p class="status-message info">No matching environmental data found for this time period.</p>';
+                }
+                
+                panel.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                content.innerHTML = `<p class="status-message error">Error: ${error.message}</p>`;
+            }
+        });
+    });
 
-    } catch (error) {
-        container.innerHTML = `<p class="error">Error loading audio: ${error.message}</p>`;
+    function renderData(data, container) {
+        // Displaying the sensor readings in a readable format
+        let html = '<ul class="data-list">';
+        data.forEach(entry => {
+            html += `<li><strong>${entry.time}:</strong> Moisture: ${entry.moisture}%</li>`;
+        });
+        html += '</ul>';
+        container.innerHTML = html;
     }
-}
+});

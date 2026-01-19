@@ -1,0 +1,54 @@
+/* 1. Fix the distance from the H1 */
+.upload-area-container {
+    margin-top: 30px !important; /* Forces the gap from the 'Audio Files' header */
+    width: 100% !important;
+    max-width: 100% !important; /* Removes any restriction on width */
+    display: block !important;  /* Ensures children stack vertically and fill width */
+}
+
+/* 2. Make the list container fill everything */
+.audio-list-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Distance between each bar */
+}
+
+/* 3. The Audio Bar Styling */
+.audio-item {
+    margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    
+    /* Layout: Force content to the left */
+    display: flex !important;
+    flex-direction: column;      /* Stack Title over Date/Time */
+    align-items: flex-start !important; /* Align children to the left */
+    text-align: left !important; /* Ensure text itself is left-aligned */
+    
+    /* Aesthetics */
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    padding: 20px 30px !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+}
+
+.audio-item h2 {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%; /* Ensures the heading doesn't try to center itself */
+}
+
+.audio-item p {
+    margin: 5px 0 0 0 !important;
+    width: 100%;
+}
+
+/* 4. The Hover 'Pop' */
+.audio-item:hover {
+    border-color: var(--accent-clr) !important; /* Highlight color on hover */
+    background-color: rgba(255, 255, 255, 0.07) !important;
+    transform: translateX(10px); /* Slides right slightly when hovering */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}

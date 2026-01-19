@@ -5,6 +5,13 @@ import datetime # Needed for UNIX timestamp conversion
 from contextlib import contextmanager
 from config import *
 
+# Centralized configuration for MySQL database
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': '031021', # Your actual password
+    'database': 'Weather_Db'
+}
 
 def get_db_connection(dict_cursor=False):
     try:
@@ -307,5 +314,3 @@ def get_weather_data_for_audio(audio_id):
     finally:
         if conn:
             conn.close()
-
-            
