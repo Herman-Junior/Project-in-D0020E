@@ -183,7 +183,7 @@ def get_weather_api():
 
 # --- COMBINED DATA FUNCTION ---#
 
-def get_combined_data(start_date=None, end_date=None, limit=500):
+def get_combined_data(start_date=None, end_date=None, limit=10000):
     conn = None
     try:
         conn = get_db_connection(dict_cursor=True)
@@ -272,45 +272,15 @@ def get_combined_api():
 # --- UPLOAD FUNCTIONS --- #
 
 def upload_csv_file():
-    """API endpoint to handle file upload, process the CSV, and return the result."""
-    
-    # Check if the POST request has the file part
-    if 'file' not in request.files:
-        return jsonify({"status": "error", "message": "No file part in the request"}), 400
-        
-    file = request.files['file']
-    
-    # If the user submits an empty part
-    if file.filename == '':
-        return jsonify({"status": "error", "message": "No selected file"}), 400
+    file = request.files.get('file')
+    if not file:
+        return jsonify({"error": "No file"}), 400
 
-    if file:
-        # Define a safe temporary path to save the file
-        temp_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
-        os.makedirs(temp_dir, exist_ok=True)
-        
-        # Use a safe filename
-        filename = file.filename
-        filepath = os.path.join(temp_dir, filename)
-        
-        try:
-            # 1. Save the file temporarily
-            file.save(filepath)
-            
-            # 2. Process the file using your existing logic
-            result = process_csv_file(filepath)
-            
-            return jsonify(result), 200
-            
-        except Exception as e:
-            return jsonify({"status": "error", "message": f"Server processing failed: {e}"}), 500
-        
-        finally:
-            # 3. IMPORTANT: Clean up the temporary file
-            if os.path.exists(filepath):
-                os.remove(filepath)
+    # We pass the 'file' object (which is a stream) 
+    # instead of saving it to a folder first.
+    result = process_csv_file(file) 
     
-    return jsonify({"status": "error", "message": "Unknown error during upload"}), 500
+    return jsonify(result)
 
 def upload_audio_metadata():
     if 'file' not in request.files:
@@ -351,7 +321,7 @@ def get_audio_with_environmental_data():
         cursor = conn.cursor()
         
         # Get audio recording info
-        cursor.execute("SELECT * FROM audiorecording WHERE id = %s", (audio_id,))
+        cursor.execute("SELECT * FROM AUDIO_RECORDING WHERE id = %s", (audio_id,))
         audio = cursor.fetchone()
         conn.close()
         
@@ -394,4 +364,42 @@ def query_page():
     return render_template('query.html')
 
 def audio_page():
-    return render_template('audio.html')
+    """
+    Logic for the audio management page.
+    Fetches all recordings to display them in the list.
+    """
+    conn = None
+    recordings = []
+    try:
+        # Use dict_cursor=True so we can access columns by name in the HTML
+        conn = get_db_connection(dict_cursor=True)
+        if not conn:
+            return render_template('audio.html', recordings=[])
+
+        cursor = conn.cursor()
+        
+        # Query matching your SQL schema
+        # We fetch start_time to show the user when it was recorded
+        query = "SELECT id, date, start_time, file_path FROM AUDIO_RECORDING ORDER BY start_time DESC"
+        cursor.execute(query)
+        recordings = cursor.fetchall()
+
+        # Clean up data for the HTML template
+        for record in recordings:
+            # Extract filename from path (e.g., /path/to/file.wav -> file.wav)
+            if record['file_path']:
+                record['filename'] = os.path.basename(record['file_path'])
+            
+            # Format date and time objects to strings for clean display
+            if record['date']:
+                record['date'] = record['date'].strftime('%Y-%m-%d')
+            if record['start_time']:
+                record['start_time'] = record['start_time'].strftime('%H:%M:%S')
+
+    except Exception as e:
+        print(f"Error in audio_page logic: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+    return render_template('audio.html', recordings=recordings)

@@ -2,6 +2,13 @@
 
 {% block title %}Audio Recordings{% endblock %}
 
+{% block head_links %}
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/audio-styles.css') }}"
+    />
+{% endblock %}
+
 {% block scripts %}
     <script src="{{ url_for('static', filename='scripts/audio.js') }}" defer></script>
 {% endblock %}
@@ -9,29 +16,36 @@
 {% block content %}
 <h1>Audio Files</h1>
 
-<div class="audio-list-container">
-    {% if recordings %}
-        {% for record in recordings %}
-        <div class="container upload-box audio-item" 
-             data-audio-id="{{ record.id }}" 
-             data-filename="{{ record.filename }}"
-             style="cursor: pointer; margin-bottom: 20px;">
-            
-            <div style="text-align: left;">
-                <h2 style="margin: 0;">{{ record.filename }}</h2>
-                <p style="color: var(--secondary-text-clr); margin-top: 5px;">
-                    {{ record.date }} | {{ record.start_time }}
-                </p>
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <p>No audio recordings found.</p>
-    {% endif %}
-</div>
+<div class="upload-area-container">
 
-<div id="correlation-panel" class="container" style="display: none; margin-top: 40px;">
-    <h2 id="selected-audio-title">Correlated Data</h2>
-    <div id="correlation-content"></div>
+    <div class="audio-list-container">
+        {% if recordings %}
+            {% for record in recordings %}
+            <div class="container upload-box audio-item" 
+                data-audio-id="{{ record.id }}" 
+                data-filename="{{ record.filename }}"
+                style="cursor: pointer;">
+                
+                <div style="text-align: left;">
+                    <h2 style="margin: 0;">{{ record.filename }}</h2>
+                    <p style="color: var(--secondary-text-clr); margin-top: 5px;">
+                        {{ record.date }} | {{ record.start_time }}
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="container upload-box">
+                <p class="status-message">No audio recordings found.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div id="correlation-panel" class="container upload-box" style="display: none; margin-top: 30px;">
+        <h2 id="selected-audio-title">Correlated Data</h2>
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+        <div id="correlation-content"></div>
+    </div>
+
 </div>
 {% endblock %}
