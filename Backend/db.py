@@ -156,40 +156,26 @@ def insert_audio_data(audio_metadata):
     
     conn = None
     try:
+        start_ts = format_timestamp(audio_metadata.get('start_timestamp'))
+        end_ts = format_timestamp(audio_metadata.get('end_timestamp'))
+        if not start_ts or not end_ts:
+            return False, "Invalid start or end timestamp"
+
         conn = get_db_connection()
         if not conn:
             return False, "Database connection failed"
-        
-        cursor = conn.cursor()
-
-        # convert UNIX timecode to datetime
-        start_timestamp = audio_metadata.get('start_timestamp')
-        end_timestamp = audio_metadata.get('end_timestamp')
-
-        if isinstance(start_timestamp, (int, float)):
-            start_dt = datetime.datetime.fromtimestamp(start_timestamp)
-            start_time = start_dt.strftime('%Y-%m-%d %H:%M:%S')
-            date_value = start_dt.strftime('%Y-%m-%d')
-        else:
-            return False, "Invalid start_timestamp"
-        
-        if isinstance(end_timestamp, (int, float)):
-            end_dt = datetime.datetime.fromtimestamp(end_timestamp)
-            end_time = end_dt.strftime('%Y-%m-%d %H:%M:%S')
-        else:
-            return False, "Invalid end_timestamp"
-        
-        # SQL QUERY
-
+     
         query = """
             INSERT INTO AUDIO_RECORDING (`date`, start_time, end_time, file_path)
             VALUES (%s, %s, %s, %s)
         """
+
+        cursor = conn.cursor()
         
         values = (
-            date_value,
-            start_time,
-            end_time,
+            start_ts['date'],             # Date 
+            start_ts['timestamp'],
+            end_ts['timestamp'],
             audio_metadata.get('filepath')
         )
         
