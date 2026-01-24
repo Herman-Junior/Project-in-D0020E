@@ -14,13 +14,13 @@ CREATE TABLE AUDIO_RECORDING (
     date DATE,
     start_time DATETIME NOT NULL,
     end_time DATETIME NOT NULL,
-    file_path TEXT NOT NULL
+    file_path VARCHAR(255) NOT NULL UNIQUE -- New code: file_path must be UNIQUE so we can 'REPLACE' if the file is re-uploaded
 );
 
 -- Weather table
 CREATE TABLE WEATHER_DATA (
     weather_id INT AUTO_INCREMENT PRIMARY KEY,
-    timestamp DATETIME NOT NULL,
+    timestamp DATETIME NOT NULL UNIQUE, -- New: idtenifies a duplicate row.
     date DATE,
     time TIME,
     in_temperature DOUBLE,
@@ -35,7 +35,7 @@ CREATE TABLE WEATHER_DATA (
 
 CREATE TABLE SENSOR_DATA (
     sensor_id INT AUTO_INCREMENT PRIMARY KEY,
-    timestamp DATETIME NOT NULL,
+    timestamp DATETIME NOT NULL UNIQUE, -- Uniquie Contraint
     date DATE,
     time TIME,
     moisture DOUBLE
@@ -43,17 +43,17 @@ CREATE TABLE SENSOR_DATA (
 
 CREATE TABLE ALL_DATA (
     all_data_id INT AUTO_INCREMENT PRIMARY KEY,
-    timestamp DATETIME NOT NULL,
-    -- Changed to NULL to allow sensor data to be inserted without weather data
+    timestamp DATETIME NOT NULL UNIQUE, -- -- NEW: UNIQUE here too
     weather_data_id INT NULL, 
     CONSTRAINT fk_weather
         FOREIGN KEY (weather_data_id)
-        REFERENCES WEATHER_DATA(weather_id),
-    -- Changed to NULL to allow weather data to be inserted without sensor data
+        REFERENCES WEATHER_DATA(weather_id)
+        ON DELETE SET NULL, -- -- NEW: Allows replacement without error
     sensor_data_id INT NULL,
     CONSTRAINT fk_sensor
         FOREIGN KEY (sensor_data_id)
         REFERENCES SENSOR_DATA(sensor_id)
+        ON DELETE SET NULL
 );
 
 

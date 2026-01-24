@@ -32,18 +32,22 @@ def sync_all_data(timestamp, source_type, source_id):
         if not conn: return
         try:
             cursor = conn.cursor()
-            # Check if a record already exists for this timestamp
-            cursor.execute("SELECT all_data_id FROM ALL_DATA WHERE timestamp = %s", (timestamp,))
+            # 1. Look for existing links
+            cursor.execute("SELECT weather_data_id, sensor_data_id FROM ALL_DATA WHERE timestamp = %s", (timestamp,))
             existing = cursor.fetchone()
-            if existing:
-                column = "sensor_data_id" if source_type == 'sensor' else "weather_data_id"
-                cursor.execute(f"UPDATE ALL_DATA SET {column} = %s WHERE all_data_id = %s", (source_id, existing[0]))
+
+            # 2. Decide what to keep and what to update
+            # If we are replacing sensor data, we keep the weather_id from the 'existing' row
+            if source_type == 'weather':
+                w_id = source_id
+                s_id = existing[1] if existing else None
             else:
-                # Create a new record with the data we have
-                if source_type == 'sensor':
-                    cursor.execute("INSERT INTO ALL_DATA (timestamp, sensor_data_id) VALUES (%s, %s)", (timestamp, source_id))
-                else:
-                    cursor.execute("INSERT INTO ALL_DATA (timestamp, weather_data_id) VALUES (%s, %s)", (timestamp, source_id))
+                s_id = source_id
+                w_id = existing[0] if existing else None
+
+            # 3. REPLACE handles the cleanup automatically
+            query = "REPLACE INTO ALL_DATA (timestamp, weather_data_id, sensor_data_id) VALUES (%s, %s, %s)"
+            cursor.execute(query, (timestamp, w_id, s_id))
             conn.commit()
         except Exception as e:
             print(f"Sync Error: {e}")
@@ -54,13 +58,6 @@ def sync_all_data(timestamp, source_type, source_id):
 # ===============
 
 def insert_sensor_data(data_row):
-    """
-    Inserts a single row of sensor data into the SENSOR_DATA table.
-    Targets the columns: date, timestamp, and moisture.
-    
-    :param data_row: Dictionary containing 'moisture' and 'timestamp' (Unix epoch).
-    :return: Tuple (success_boolean, message_or_last_insert_id)
-    """
     ts = format_timestamp(data_row.get('timestamp'))
     if not ts: 
         return False, "Invalid timestamp"
@@ -70,7 +67,8 @@ def insert_sensor_data(data_row):
             return False, "Database connection failed."
 
         cursor = conn.cursor()
-        query = "INSERT INTO SENSOR_DATA (`timestamp`, `date`, `time`, `Moisture`) VALUES (%s, %s, %s, %s)"
+        # -- NEW: Changed INSERT to REPLACE
+        query = "REPLACE INTO SENSOR_DATA (`timestamp`, `date`, `time`, `moisture`) VALUES (%s, %s, %s, %s)"
         values = (ts['timestamp'], ts['date'], ts['time'], data_row.get('moisture'))
         
         try:
@@ -84,10 +82,6 @@ def insert_sensor_data(data_row):
             return False, str(e)
  
 def insert_weather_data(data_row):
-    """
-    Inserts a single row of weather data into the WEATHER_DATA table.
-    Calculates date, time, and timestamp from the Unix epoch input.
-    """
     ts = format_timestamp(data_row.get('timestamp'))
     if not ts: 
         return False, "Invalid timestamp" 
@@ -97,15 +91,15 @@ def insert_weather_data(data_row):
             return False, "Database connection failed."
         try: 
             cursor = conn.cursor()
+            # -- NEW: Changed INSERT to REPLACE
             query = """
-                INSERT INTO WEATHER_DATA (
+                REPLACE INTO WEATHER_DATA (
                     `timestamp`, `date`, `time`, in_temperature, out_temperature, 
                     in_humidity, out_humidity, wind_speed, wind_direction, daily_rain, rain_rate
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
         
-            # Prepare Values (Must match the 11 column order above)
             values = ( 
                 ts['timestamp'], ts['date'], ts['time'],
                 data_row.get('in_temperature'), data_row.get('out_temperature'),
@@ -140,7 +134,8 @@ def insert_audio_data(audio_metadata):
 
         try:
             cursor = conn.cursor()
-            query = "INSERT INTO AUDIO_RECORDING (`date`, start_time, end_time, file_path) VALUES (%s, %s, %s, %s)"
+            # -- NEW: Changed INSERT to REPLACE
+            query = "REPLACE INTO AUDIO_RECORDING (`date`, start_time, end_time, file_path) VALUES (%s, %s, %s, %s)"
             values = (
                 start_ts['date'], start_ts['timestamp'],
                 end_ts['timestamp'], audio_metadata.get('filepath')
@@ -154,7 +149,8 @@ def insert_audio_data(audio_metadata):
             return False, f"Insertion failed: {e}"
 
 def get_latest_audio_data(limit=10):
-    with get_db_connection(dict_cursor=True) as conn:
+    with db_session(dict_cursor=True) as conn:
+        if not conn: return []
         cursor = conn.cursor()
         query = "SELECT * FROM AUDIO_RECORDING ORDER BY start_time DESC LIMIT %s"
         cursor.execute(query, (limit,))
