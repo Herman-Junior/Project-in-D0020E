@@ -7,8 +7,12 @@ DB_CONFIG = {
     'database': 'WEATHER_DB'
 }
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
 
-# where the audiofiles are stored
+TEMPLATE_FOLDER_PATH = os.path.join(PROJECT_ROOT, 'frontend')
+STATIC_FOLDER_PATH = os.path.join(PROJECT_ROOT, 'frontend', 'static')
+
 AUDIO_DIRECTORY = os.path.join(os.path.dirname(__file__), 'audio_files')
 UPLOAD_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
 

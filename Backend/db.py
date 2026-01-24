@@ -1,9 +1,9 @@
 # backend/db.py
 import pymysql
 import pymysql.cursors
-import datetime # Needed for UNIX timestamp conversion
 from contextlib import contextmanager
 from config import *
+from utils import format_timestamp
 
 # ====================
 # CONNECTION HANDLING
@@ -48,23 +48,10 @@ def sync_all_data(timestamp, source_type, source_id):
         except Exception as e:
             print(f"Sync Error: {e}")
 
-# =================
-# HELPER FUNCTIONS 
-# =================
 
-def format_timestamp(unix_ts):
-    if not isinstance(unix_ts, (int, float)):
-        return None
-    dt = datetime.datetime.fromtimestamp(unix_ts)
-    return {
-        'timestamp':    dt.strftime('%Y-%m-%d %H:%M:%S'), 
-        'date':         dt.strftime('%Y-%m-%d'),          
-        'time':         dt.strftime('%H:%M:%S')           
-    }
-
-# ======================
-# SENSOR DATA INSERTION
-# ======================
+# ===============
+# DATA INSERTION
+# ===============
 
 def insert_sensor_data(data_row):
     """
@@ -166,58 +153,9 @@ def insert_audio_data(audio_metadata):
             print(f"Audio Data Insertion Error: {e}")
             return False, f"Insertion failed: {e}"
 
-
-def get_sensor_data_for_audio(audio_id):
-    """
-    Retrieves all sensor data that falls within an audio recording's time range.
-    
-    :param audio_id: ID of the audio recording
-    :return: List of sensor data dictionaries
-    """
-    with db_session(dict_cursor=True) as conn:
-        if not conn:
-            return []
-        try:
-            cursor = conn.cursor()
-            query = """
-                SELECT s.timestamp, s.date, s.time, s.moisture
-                FROM SENSOR_DATA s
-                JOIN AUDIO_RECORDING a ON s.timestamp BETWEEN a.start_time AND a.end_time
-                WHERE a.id = %s
-                ORDER BY s.timestamp ASC
-            """
-            cursor.execute(query, (audio_id,))
-            return cursor.fetchall()  
-        except Exception as e:
-            print(f"Error querying sensor data for audio: {e}")
-            return []
-
-
-def get_weather_data_for_audio(audio_id):
-    """
-    Retrieves all weather data that falls within an audio recording's time range.
-    
-    :param audio_id: ID of the audio recording
-    :return: List of weather data dictionaries
-    """
-    with db_session(dict_cursor=True) as conn:
-        if not conn: return []
-        try:
-            cursor = conn.cursor()
-            query = """
-                SELECT 
-                    w.timestamp, w.date, w.time,
-                    w.in_temperature, w.out_temperature,
-                    w.in_humidity, w.out_humidity,
-                    w.wind_speed, w.wind_direction,
-                    w.daily_rain, w.rain_rate
-                FROM WEATHER_DATA w
-                JOIN audiorecording a ON w.timestamp BETWEEN a.start_time AND a.end_time
-                WHERE a.id = %s
-                ORDER BY w.timestamp ASC
-            """
-            cursor.execute(query, (audio_id,))
-            return cursor.fetchall()     
-        except Exception as e:
-            print(f"Error querying weather data for audio: {e}")
-            return []
+def get_latest_audio_data(limit=10):
+    with get_db_connection(dict_cursor=True) as conn:
+        cursor = conn.cursor()
+        query = "SELECT * FROM AUDIO_RECORDING ORDER BY start_time DESC LIMIT %s"
+        cursor.execute(query, (limit,))
+        return cursor.fetchall()
