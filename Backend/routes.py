@@ -3,8 +3,7 @@ from flask import jsonify, render_template, request
 import os
 
 # Internal project imports
-from db import (
-    get_db_connection)
+from db import (get_db_connection, get_latest_audio_data)
 from services import (
     get_audio_environmental_data_logic,
     get_latest_sensor_data,    
@@ -13,7 +12,8 @@ from services import (
     handle_audio_upload_logic
 )
 from data_loader import process_csv_file
-from utils import is_allowed_file
+from utils import is_allowed_file, format_for_frontend
+
 
 
 # --- SENSOR DATA FUNCTIONS --- #
@@ -52,9 +52,6 @@ def get_audio_api():
     utility parser and the frontend formatter.
     """
     try:
-        from db import get_latest_audio_data
-        from utils import format_for_frontend
-        
         # get_latest_audio_data should return a list of dictionaries 
         # where 'date' is a datetime.date object.
         data = get_latest_audio_data(limit=10) 
