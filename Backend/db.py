@@ -155,3 +155,83 @@ def get_latest_audio_data(limit=10):
         query = "SELECT * FROM AUDIO_RECORDING ORDER BY start_time DESC LIMIT %s"
         cursor.execute(query, (limit,))
         return cursor.fetchall()
+    
+
+
+# =================
+# Soft deletion
+# =================
+
+#Hide row in weather data
+def delete_weather_data(weather_id):
+    with db_session() as conn:
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        query="UPDATE WEATHER_DATA SET is_deleted = 1 WHERE weather_id = %s"
+        cursor.execute(query,(weather_id,))
+        conn.commit()
+
+        return True
+    
+#Hide row in Sensor data
+def delete_sensor_data(sensor_id):
+    with db_session() as conn:
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        query="UPDATE SENSOR_DATA SET is_deleted = 1 WHERE sensor_id = %s"
+        cursor.execute(query,(sensor_id,))
+        conn.commit()
+
+        return True
+    
+#Hide row in Audio recording data 
+def delete_audio_recording(id):
+    with db_session() as conn:
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        query="UPDATE AUDIO_RECORDING SET is_deleted = 1 WHERE id = %s"
+        cursor.execute(query,(id,))
+        conn.commit()
+
+        return True
+    
+# =================
+# Regret deletion
+# =================
+
+def regret_weather_data_deletion(weather_id):
+    with db_session() as conn:
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        query="UPDATE WEATHER_DATA SET is_deleted = 0 WHERE weather_id = %s"
+        cursor.execute(query(weather_id,))
+        conn.commit()
+
+        return True
+
+def regret_sensor_data_deletion(sensor_id):
+    with db_session() as conn:
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        query="UPDATE SENSOR_DATA SET is_deleted = 0 WHERE sensor_id = %s"
+        cursor.execute(query(sensor_id,))
+        conn.commit()
+
+        return True
+    
+
+def regret_audio_recording_deletion(id):
+    with db_session() as conn:
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        query="UPDATE AUDIO_RECORDING SET is_deleted = 0 WHERE id = %s"
+        cursor.execute(query(id,))
+        conn.commit()
+
+        return True

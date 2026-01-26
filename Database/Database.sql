@@ -44,11 +44,13 @@ CREATE TABLE SENSOR_DATA (
 CREATE TABLE ALL_DATA (
     all_data_id INT AUTO_INCREMENT PRIMARY KEY,
     timestamp DATETIME NOT NULL UNIQUE, -- -- NEW: UNIQUE here too
+    -- Changed to NULL to allow sensor data to be inserted without weather data
     weather_data_id INT NULL, 
     CONSTRAINT fk_weather
         FOREIGN KEY (weather_data_id)
-        REFERENCES WEATHER_DATA(weather_id)
+        REFERENCES WEATHER_DATA(weather_id),
         ON DELETE SET NULL, -- -- NEW: Allows replacement without error
+    -- Changed to NULL to allow weather data to be inserted without sensor data
     sensor_data_id INT NULL,
     CONSTRAINT fk_sensor
         FOREIGN KEY (sensor_data_id)
@@ -77,4 +79,32 @@ INNER JOIN
 INNER JOIN
     SENSOR_DATA S ON A.sensor_data_id = S.sensor_id
 WHERE
-    A.timestamp = '2025-12-13 19:00:00'; -- Filter on the timestamp you just inserted
+    W.is_deleted = 0 -- Hides weather data marked as deleted
+    AND S.is_deleted = 0 -- Hides sensor data marked as deleted
+    AND A.timestamp = '2025-12-13 19:00:00'; -- Filter on the timestamp you just inserted
+
+
+-- Add soft delete flag to Audio recordings
+ALTER TABLE AUDIO_RECORDING 
+ADD COLUMN is_deleted TINYINT(1) DEFAULT 0;
+
+-- Add soft delete flag to Weather data
+ALTER TABLE WEATHER_DATA 
+ADD COLUMN is_deleted TINYINT(1) DEFAULT 0;
+
+-- Add soft delete flag to Sensor data
+ALTER TABLE SENSOR_DATA 
+ADD COLUMN is_deleted TINYINT(1) DEFAULT 0;
+
+-- This creates a shortcut to see all deleted weather entries
+CREATE VIEW DELETED_WEATHER AS
+SELECT * FROM WEATHER_DATA 
+WHERE is_deleted = 1;
+
+CREATE VIEW DELETED_SENSOR AS
+SELECT * FROM SENSOR_DATA   
+WHERE is_deleted = 1;
+
+CREATE VIEW DELETED_AUDIO AS
+SELECT * FROM AUDIO_RECORDING  
+WHERE is_deleted = 1;
