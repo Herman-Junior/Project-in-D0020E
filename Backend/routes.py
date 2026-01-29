@@ -3,7 +3,7 @@ from flask import jsonify, render_template, request
 import os
 
 # Internal project imports
-from db import (get_db_connection, get_latest_audio_data)
+from db import (delete_sensor_data, delete_weather_data, delete_audio_recording, get_db_connection, get_latest_audio_data)
 from services import (
     get_audio_environmental_data_logic,
     get_latest_sensor_data,    
@@ -91,6 +91,34 @@ def get_combined_api():
         return jsonify({'error': combined_data[0]['error']}), 500
         
     return jsonify(combined_data)
+
+#--- Delete batch API --- #
+def batch_delete_api():
+    data = request.json
+    ids = data.get('ids', [])
+    data_type = data.get('data_type')
+
+    if not ids:
+        return jsonify({"error": "Inga ID:n angivna"}), 400
+    success_count = 0
+    
+    try:
+        for item_id in ids:
+            if data_type == 'sensor':
+                if delete_sensor_data(item_id):
+                    success_count += 1
+            elif data_type == 'weather':
+                if delete_weather_data(item_id):
+                    success_count += 1
+            elif data_type == 'audio':
+                if delete_audio_recording(item_id):
+                    success_count += 1
+        return jsonify({
+            "status": "success",
+            "message": f"raderade {success_count} objekt {data_type}."
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Fel vid borttagning: {str(e)}"}), 500
 
 
 def upload_csv_file():

@@ -208,7 +208,7 @@ def regret_weather_data_deletion(weather_id):
             return False
         cursor = conn.cursor()
         query="UPDATE WEATHER_DATA SET is_deleted = 0 WHERE weather_id = %s"
-        cursor.execute(query(weather_id,))
+        cursor.execute(query,(weather_id,))
         conn.commit()
 
         return True
@@ -219,7 +219,7 @@ def regret_sensor_data_deletion(sensor_id):
             return False
         cursor = conn.cursor()
         query="UPDATE SENSOR_DATA SET is_deleted = 0 WHERE sensor_id = %s"
-        cursor.execute(query(sensor_id,))
+        cursor.execute(query,(sensor_id,))
         conn.commit()
 
         return True
@@ -231,7 +231,35 @@ def regret_audio_recording_deletion(id):
             return False
         cursor = conn.cursor()
         query="UPDATE AUDIO_RECORDING SET is_deleted = 0 WHERE id = %s"
-        cursor.execute(query(id,))
+        cursor.execute(query,(id,))
         conn.commit()
 
         return True
+    
+# =================
+# Vew deleted data
+# =================
+
+def view_deleted_weather_data():
+    with db_session(dict_cursor=True) as conn:
+        if not conn: return []
+        cursor=conn.cursor()
+        query="SELECT * FROM DELETED_WEATHER"
+        cursor.execute(query)
+        return cursor.fetchall()
+    
+def view_deleted_sensor_data():
+    with db_session(dict_cursor=True) as conn:
+        if not conn: return []
+        cursor=conn.cursor()
+        query="SELECT * FROM DELETED_SENSOR"
+        cursor.execute(query)
+        return cursor.fetchall()
+    
+def view_deleted_audio_data():
+    with db_session(dict_cursor=True) as conn:
+        if not conn: return []
+        cursor=conn.cursor()
+        query="SELECT * FROM DELETED_AUDIO"
+        cursor.execute(query)
+        return cursor.fetchall()

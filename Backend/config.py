@@ -3,7 +3,7 @@ import os
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
-    'password': '031021',
+    'password': '040813',
     'database': 'WEATHER_DB'
 }
 

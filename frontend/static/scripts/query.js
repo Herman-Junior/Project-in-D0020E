@@ -70,7 +70,31 @@ document.addEventListener('DOMContentLoaded', () => {
             resultsDiv.innerHTML = `<p class="error">Network Error: ${e.message}. Check your server and API endpoints.</p>`;
         }
     }
+    document.addEventListener('change', (e) => {
+    if (e.target.id === 'select-all-rows') {
+        const checkboxes = document.querySelectorAll('.row-checkbox');
+        checkboxes.forEach(cb => cb.checked = e.target.checked);
+        updateActionMenu();
+    }
     
+    if (e.target.classList.contains('row-checkbox')) {
+        updateActionMenu();
+    }
+    });
+
+    function updateActionMenu() {
+    const selected = document.querySelectorAll('.row-checkbox:checked');
+    const container = document.getElementById('bulk-actions-container');
+    const countSpan = document.getElementById('selected-count');
+    
+    if (selected.length > 0) {
+        container.style.display = 'block';
+        countSpan.textContent = selected.length;
+    } else {
+        container.style.display = 'none';
+    }
+}
+
     // --- TABLE RENDERING (MODIFIED TO ENFORCE DATE/TIME ORDER) ---
     function renderTable(data, targetElement) {
         targetElement.innerHTML = ''; // Clear previous content
@@ -89,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 4. Combine: mandatory headers first, then the rest of the data columns
         const headers = [...mandatoryHeaders, ...remainingHeaders];
-        
+
         let tableHTML = '<div class="table-container"><table class="data-table"><thead><tr>';
         
         // Create header row
@@ -103,6 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // 5. Create data rows using the fixed 'headers' array for consistent cell ordering
         data.forEach(row => {
             tableHTML += '<tr>';
+            const rowId = row.id || ''; 
+            tableHTML += `<td><input type="checkbox" class="row-checkbox" value="${rowId}"></td>`;
+
             headers.forEach(header => {
                 const cellValue = row[header] !== undefined && row[header] !== null ? row[header] : 'N/A';
                 tableHTML += `<td>${cellValue}</td>`;
@@ -113,5 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tableHTML += '</tbody></table></div>';
         
         targetElement.innerHTML = tableHTML;
+        updateActionMenu();
     }
 });
