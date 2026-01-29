@@ -48,8 +48,7 @@ CREATE TABLE ALL_DATA (
     weather_data_id INT NULL, 
     CONSTRAINT fk_weather
         FOREIGN KEY (weather_data_id)
-        REFERENCES WEATHER_DATA(weather_id),
-        ON DELETE SET NULL, -- -- NEW: Allows replacement without error
+        REFERENCES WEATHER_DATA(weather_id), -- -- NEW: Allows replacement without error
     -- Changed to NULL to allow weather data to be inserted without sensor data
     sensor_data_id INT NULL,
     CONSTRAINT fk_sensor
@@ -96,7 +95,7 @@ ADD COLUMN is_deleted TINYINT(1) DEFAULT 0;
 ALTER TABLE SENSOR_DATA 
 ADD COLUMN is_deleted TINYINT(1) DEFAULT 0;
 
--- This creates a shortcut to see all deleted weather entries
+-- This creates a shortcut to see all deleted entries
 CREATE VIEW DELETED_WEATHER AS
 SELECT * FROM WEATHER_DATA 
 WHERE is_deleted = 1;
