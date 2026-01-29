@@ -52,3 +52,28 @@
     transform: translateX(10px); /* Slides right slightly when hovering */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
+
+.back-link {
+    display: inline-block;    /* Necessary for vertical margins to work */
+    margin-bottom: 20px;      /* Adjust this value (30px, 40px, etc.) to your liking */
+    color: var(--secondary-text-clr);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.back-link:visited {
+    color: var(--secondary-text-clr); 
+}
+
+.back-link:hover {
+    color: var(--accent-clr);
+    text-decoration: underline;
+}
+
+.table-container + .section-title,
+.table-container + h2 {
+    margin-top: px !important; 
+    padding-top: 20px;20
+    border-top: 1px solid rgba(255,255,255,0.05); /* Optional: subtle line between sections */
+}

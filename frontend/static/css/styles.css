@@ -264,3 +264,43 @@ main p{
 #csv-upload-box, #audio-upload-box {
     padding: 30px;
 }
+
+/* --- Global Condensed Data Table Styles --- */
+
+.table-container {
+    width: 100%;
+    overflow-x: auto; /* Scrollbar for many columns */
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border: 1px solid var(--line-clr);
+    border-radius: 8px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    /* This forces the table to respect the widths we set below */
+    table-layout: auto; 
+}
+
+/* 2. Fix the cell behavior */
+.data-table th, 
+.data-table td {
+    padding: 12px 15px !important;
+    text-align: left;
+    /* CRITICAL: This stops text from wrapping or sliding under other cells */
+    white-space: nowrap; 
+    border-bottom: 1px solid var(--line-clr);
+}
+
+/* 3. Give every column a "Safety Zone" */
+.data-table th {
+    /* Ensures headers like "Out Temperature" have enough room */
+    min-width: 150px; 
+}
+
+/* 4. Keep Date/Time compact but readable */
+.data-table th:nth-child(1), .data-table td:nth-child(1),
+.data-table th:nth-child(2), .data-table td:nth-child(2) {
+    min-width: 110px;
+}

@@ -15,7 +15,6 @@ from data_loader import process_csv_file
 from utils import is_allowed_file, format_for_frontend
 
 
-
 # --- SENSOR DATA FUNCTIONS --- #
 
 def get_sensor_api():
@@ -62,7 +61,6 @@ def get_audio_api():
     except Exception as e:
         return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
 
-
 def get_audio_environmental_api():
     """
     API endpoint: /api/v1/audio/environmental?audio_id=123
@@ -79,7 +77,6 @@ def get_audio_environmental_api():
         return jsonify(data), status_code
         
     return jsonify(data), 200
-
 
 def get_combined_api():
     """API endpoint handler for /api/v1/combined"""
@@ -207,3 +204,5 @@ def audio_page():
 
     return render_template('audio.html', recordings=recordings)
 
+def audio_details_page():
+    return render_template('audio_details.html')

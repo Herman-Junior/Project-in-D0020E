@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Details: {{ record_name }}{% endblock %}
+
+{% block head_links %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/audio-styles.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/query-styles.css') }}">
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='scripts/audio.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="details-wrapper">
+    <a href="/audio" class="back-link">← Back to Audio List</a>
+    
+    <div class="details-header">
+        <h1 id="selected-audio-title" style="margin-bottom: 5px;">Loading...</h1>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+
+    <div id="correlation-content">
+        </div>
+</div>
+{% endblock %}
