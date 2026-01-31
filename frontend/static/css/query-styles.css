@@ -1,24 +1,50 @@
 /* ------------------------------------------- */
-/* --- QUERY PAGE SPECIFIC STYLES ---          */
-/* --- Loaded AFTER styles.css to cascade ---  */
+/* --- 1. LAYOUT WRAPPER (HEADER SPACE) ---    */
 /* ------------------------------------------- */
 
-/* Override default container padding for the controls section */
-.controls-container {
-    /* Uses flex for a responsive horizontal layout, wrapping if necessary */
+.query-layout-wrapper {
     display: flex;
-    flex-wrap: wrap; 
-    gap: 20px; /* Space between control groups */
-    padding: 20px; 
-    border-color: var(--line-clr); /* Highlight the control container */
-    margin-top: 30px;
+    justify-content: space-between; 
+    align-items: flex-start; /* Keeps the right-side button from dropping when filters open */
+    padding: 20px;
+    gap: 20px;
+    margin-top: 60px; /* Increased space from page header */
+    border: 1px solid var(--line-clr);
+    border-radius: 1em;
 }
+
+/* LEFT COLUMN: Dropdown + Expanding Filters */
+.left-controls {
+    display: flex;
+    flex-direction: column; 
+    gap: 15px;
+    flex-grow: 1;
+}
+
+/* TOP ROW: Select box + Filter Button */
+.main-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end; 
+    gap: 15px;
+}
+
+/* RIGHT COLUMN: Load Button (Fixed at top) */
+.right-controls {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 25px; /* Aligns button with the Select box baseline */
+}
+
+/* ------------------------------------------- */
+/* --- 2. INPUTS & LABELS ---                  */
+/* ------------------------------------------- */
 
 .control-group {
     display: flex;
     flex-direction: column;
-    min-width: 200px; /* Ensure inputs have space */
-    flex-grow: 1; /* Allow groups to grow */
+    min-width: 0;
+    flex-grow: 0;
 }
 
 .control-label {
@@ -38,61 +64,93 @@
     font-size: 1em;
 }
 
-/* Fix for date input icon color on dark background */
+/* Fix for date icon visibility */
 .control-input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
 }
 
-.action-group {
-    /* Center the button vertically */
-    display: flex;
-    align-self: flex-end;
-    flex-grow: 0;
+/* ------------------------------------------- */
+/* --- 3. BUTTONS ---                          */
+/* ------------------------------------------- */
+
+#toggle-filters-btn {
+    width: fit-content;
+    padding: 0 15px;
+    flex-grow: 0; 
+    flex-shrink: 0;
+    
+    /* COOL GREY (Not Brown) */
+    background-color: #2a2d3e !important; 
+    color: var(--text-clr);
+    border: 1px solid var(--line-clr);
+    
+    font-size: 0.9em;
+    
+    height: 42px; 
+    margin: 0 !important;
 }
 
 #load-data-btn {
-    /* Custom style for the button, overriding .insert-btn if needed */
-    width: 100%; 
-    height: 100%; 
-    margin-top: 19px; /* Align with other inputs after label space */
-    min-width: 150px;
+    /* Tell it to only be as wide as the text inside */
+    width: fit-content; 
+    padding: 0 20px;
     
-    /* Custom button styling (optional, based on previous suggestion) */
-    font-size: 1.1em;
-    padding: 12px 25px;
-    background-color: var(--accent-clr); /* Using the standard accent color */
+    /* Ensure it doesn't try to grow to fill the row */
+    flex-grow: 0; 
+    flex-shrink: 0;
+    
+    /* Keep the height consistent with the dropdown */
+    height: 42px; 
+}
+
+#toggle-filters-btn {
+    background-color: #2a2d3e !important; /* Deep navy-grey */
+    color: var(--text-clr);
+    border: 1px solid var(--line-clr);
+}
+
+#toggle-filters-btn:hover {
+    background-color: #383b52; /* Slightly lighter on hover */
+}
+
+#load-data-btn {
+    min-width: 150px;
+    padding: 0 25px;
+    background-color: var(--accent-clr);
 }
 
 #load-data-btn:hover {
-    background-color: #7b80ff; /* Slightly lighter accent */
+    background-color: #7b80ff;
 }
 
-/* Results Area */
-.results-area-container {
-    padding: 20px; /* Keep a standard padding for the results box */
+.secondary-btn {
+    background-color: #444;
 }
 
+/* ------------------------------------------- */
+/* --- 4. FILTER OPTIONS (EXPANDABLE) ---      */
+/* ------------------------------------------- */
+
+#filter-options {
+    display: none; /* Controlled by JS */
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 15px;
+    background-color: var(--hover-clr);
+    border-radius: 8px;
+    border: 1px solid var(--line-clr);
+}
 
 /* ------------------------------------------- */
-/* --- DATA TABLE STYLES ---                   */
+/* --- 5. DATA TABLE STYLES ---                */
 /* ------------------------------------------- */
 
-/* * CRITICAL FIX: Force the scrollbar onto the table container.
- * This ensures the sticky header sticks to the top of this container,
- * not the main viewport, which was causing conflicts.
- */
 .table-container {
     width: 100%;
-    
-    /* Define a fixed viewing area height */
-    max-height: 70vh; /* Adjust this value if you need a smaller/larger table area */
-    
-    /* CRITICAL: Force vertical scrolling inside this container */
+    max-height: 70vh; 
     overflow-y: auto; 
-    
-    /* Keep horizontal scrolling */
     overflow-x: auto; 
-    
     margin-top: 10px;
     border: 1px solid var(--line-clr); 
     border-radius: 1em; 
@@ -101,8 +159,7 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    /* Use fixed layout to help with scrolling and column sizing */
-    table-layout: fixed; 
+    table-layout: fixed; /* Keeps column widths consistent */
 }
 
 .data-table th, .data-table td {
@@ -110,75 +167,73 @@
     text-align: left;
 }
 
-.data-table thead {
-    /* Ensure the background covers the entire header row */
-    background-color: var(--hover-clr); 
-}
-
-/* Header Styling */
+/* Header Styling - Sticky to the top of the container */
 .data-table thead th {
     background-color: var(--hover-clr); 
     color: var(--accent-clr); 
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.85em;
-    letter-spacing: 0.5px;
-    
-    /* The correct sticky rules: sticks to the top of the scrollable .table-container */
     position: sticky;
     top: 0;
     z-index: 10;
-    
-    border-bottom: 2px solid var(--accent-clr); /* Stronger line under the header */
+    border-bottom: 2px solid var(--accent-clr);
 }
 
-/* Row Styling */
+/* Row Styling & Zebra Striping */
 .data-table tbody tr {
     border-bottom: 1px solid var(--line-clr);
 }
-.data-table tbody tr:last-child {
-    border-bottom: none;
-}
 
-/* Alternating Row Background (Zebra Stripping) */
 .data-table tbody tr:nth-child(even) {
     background-color: var(--hover-clr); 
 }
 
-/* Hover effect on all rows */
 .data-table tbody tr:hover {
-    background-color: #33364f; /* Slightly lighter/brighter than hover-clr */
-    cursor: default;
+    background-color: #33364f;
 }
 
-/* Cell/Column Styling */
+/* Column Highlighting (Restored) */
 .data-table td {
     color: var(--secondary-text-clr);
     font-size: 0.95em;
 }
 
-/* Highlight Date/Time columns (first two columns) */
-.data-table tr td:nth-child(1), 
-.data-table tr td:nth-child(2) { 
+/* Highlight Date/Time columns (the first two columns after the checkbox) */
+.data-table tr td:nth-child(2), 
+.data-table tr td:nth-child(3) { 
     color: var(--text-clr); 
     font-weight: 600; 
 }
 
-
-/* ------------------------------------------- */
-/* --- STATUS MESSAGES ---                     */
-/* ------------------------------------------- */
-.loading, .info {
-    color: var(--secondary-text-clr);
+/* Checkbox Column width */
+.checkbox-col {
+    width: 10px !important;   /* Reduced from 50px */
+    padding-right: 0 !important;
     text-align: center;
-    padding: 20px;
-    margin: 0;
 }
 
-.error {
-    color: #ff5e5e; /* red color for errors */
-    font-weight: 600;
-    text-align: center;
-    padding: 20px;
-    margin: 0;
+/* 2. Remove the left padding from the column immediately following the checkbox */
+.checkbox-col + th, 
+.checkbox-col + td {
+    padding-left: 5px !important; /* Tightens the gap to the Date column */
 }
+
+/* 3. Ensure the table doesn't force extra space */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; 
+}
+
+
+/* ------------------------------------------- */
+/* --- 6. STATUS MESSAGES ---                  */
+/* ------------------------------------------- */
+
+.loading, .info, .error {
+    text-align: center;
+    padding: 40px;
+}
+
+.error { color: #ff5e5e; font-weight: 600; }

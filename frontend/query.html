@@ -3,10 +3,7 @@
 {% block title %}Lookup Data - Database Manager{% endblock %}
 
 {% block head_links %}
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/query-styles.css') }}"
-    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/query-styles.css') }}" />
 {% endblock %}
 
 {% block scripts %}
@@ -14,30 +11,44 @@
 {% endblock %}
 
 {% block content %}
-
     <h1>Lookup Data</h1>
 
-    <div class="controls-container container">
-        <div class="control-group">
-            <label for="data-select" class="control-label">Data Source</label>
-            <select id="data-select" class="control-input">
-                <option value="sensor">Sensor Data</option>
-                <option value="weather">Weather Data</option>
-                <option value="combined">Combined Data (Weather + Sensor)</option>
-            </select>
-        </div>
+    <div class="query-layout-wrapper container">
         
-        <div class="control-group">
-            <label for="start-date" class="control-label">Start Date:</label>
-            <input type="date" id="start-date" class="control-input">
-        </div>
-        
-        <div class="control-group">
-            <label for="end-date" class="control-label">End Date:</label>
-            <input type="date" id="end-date" class="control-input">
+        <div class="left-controls">
+            <div class="main-row">
+                <div class="control-group">
+                    <label for="data-select" class="control-label">Data Source</label>
+                    <select id="data-select" class="control-input">
+                        <option value="sensor">Sensor Data</option>
+                        <option value="weather">Weather Data</option>
+                        <option value="combined">Combined Data</option>
+                    </select>
+                </div>
+                <button id="toggle-filters-btn" class="insert-btn secondary-btn" type="button">Filter</button>
+            </div>
+
+            <div id="filter-options">
+                <div class="control-group">
+                    <label class="control-label">Start Date</label>
+                    <input type="date" id="start-date" class="control-input">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">End Date</label>
+                    <input type="date" id="end-date" class="control-input">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Start Time</label>
+                    <input type="time" id="start-time" class="control-input" step="1">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">End Time</label>
+                    <input type="time" id="end-time" class="control-input" step="1">
+                </div>
+            </div>
         </div>
 
-        <div class="control-group action-group">
+        <div class="right-controls">
             <button id="load-data-btn" class="insert-btn">Load Data</button>
         </div>
         
@@ -46,10 +57,9 @@
         <button id="delete-selected-btn" class="insert-btn" style="background-color: #00c8ff;">
             Delete selected (<span id="selected-count">0</span>)
         </button>
-        </div>
+         </div>
 
     <div id="results-area" class="container results-area-container">
         <p class="info">Select a data source and click "Load Data" to display results.</p>
     </div>
-
 {% endblock %}

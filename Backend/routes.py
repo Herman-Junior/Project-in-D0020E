@@ -21,8 +21,10 @@ def get_sensor_api():
     """API endpoint handler for /api/v1/sensors."""
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time')
+    end_time = request.args.get('end_time')
     
-    sensor_data = get_latest_sensor_data(start_date, end_date, limit=100)
+    sensor_data = get_latest_sensor_data(start_date, end_date, start_time, end_time, limit=100)
     
     if sensor_data and 'error' in sensor_data[0]:
         return jsonify({'error': sensor_data[0]['error']}), 500
@@ -35,13 +37,31 @@ def get_weather_api():
     """API endpoint handler for /api/v1/weather."""
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-    
-    weather_data = get_latest_weather_data(start_date, end_date, limit=100)
+    start_time = request.args.get('start_time')
+    end_time = request.args.get('end_time')
+
+    weather_data = get_latest_weather_data(start_date, end_date, start_time, end_time, limit=100)
     
     if weather_data and 'error' in weather_data[0]:
         return jsonify({'error': weather_data[0]['error']}), 500
         
     return jsonify(weather_data)    
+
+def get_combined_api():
+    """API endpoint handler for /api/v1/combined"""
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time') 
+    end_time = request.args.get('end_time')    
+
+    # Fetch data using the new DB function
+    combined_data = get_combined_data(start_date, end_date, start_time, end_time, limit=200)
+    
+    # Error Handling
+    if combined_data and 'error' in combined_data[0]:
+        return jsonify({'error': combined_data[0]['error']}), 500
+        
+    return jsonify(combined_data)
 
 # --- AUDIO DATA FUNCTIONS --- #
 
@@ -78,19 +98,6 @@ def get_audio_environmental_api():
         
     return jsonify(data), 200
 
-def get_combined_api():
-    """API endpoint handler for /api/v1/combined"""
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    
-    # Fetch data using the new DB function
-    combined_data = get_combined_data(start_date, end_date, limit=200)
-    
-    # Error Handling
-    if combined_data and 'error' in combined_data[0]:
-        return jsonify({'error': combined_data[0]['error']}), 500
-        
-    return jsonify(combined_data)
 
 #--- Delete batch API --- #
 def batch_delete_api():
