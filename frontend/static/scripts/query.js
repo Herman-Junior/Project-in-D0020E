@@ -127,19 +127,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // 5. Create data rows using the fixed 'headers' array for consistent cell ordering
         data.forEach(row => {
             tableHTML += '<tr>';
-            const rowId = row.id || ''; 
-            tableHTML += `<td><input type="checkbox" class="row-checkbox" value="${rowId}"></td>`;
 
             headers.forEach(header => {
                 const cellValue = row[header] !== undefined && row[header] !== null ? row[header] : 'N/A';
                 tableHTML += `<td>${cellValue}</td>`;
             });
+
+            const rowId = row.id || ''; 
+            tableHTML += `<td><input type="checkbox" class="row-checkbox" value="${rowId}"></td>`;
+
             tableHTML += '</tr>';
         });
 
         tableHTML += '</tbody></table></div>';
         
         targetElement.innerHTML = tableHTML;
+        
         updateActionMenu();
     }
 });
