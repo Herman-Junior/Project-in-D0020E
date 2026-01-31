@@ -158,10 +158,10 @@
 
 .data-table {
     width: 100%;
+    table-layout: fixed; /* Fixes the width to the container */
     border-collapse: collapse;
-    table-layout: fixed; /* Keeps column widths consistent */
+    word-wrap: break-word; /* Prevents long text from pushing the table out */
 }
-
 .data-table th, .data-table td {
     padding: 12px 15px;
     text-align: left;
@@ -199,31 +199,19 @@
     font-size: 0.95em;
 }
 
-/* Highlight Date/Time columns (the first two columns after the checkbox) */
-.data-table tr td:nth-child(2), 
-.data-table tr td:nth-child(3) { 
-    color: var(--text-clr); 
-    font-weight: 600; 
-}
-
-/* Checkbox Column width */
-.checkbox-col {
-    width: 10px !important;   /* Reduced from 50px */
-    padding-right: 0 !important;
-    text-align: center;
-}
-
-/* 2. Remove the left padding from the column immediately following the checkbox */
-.checkbox-col + th, 
-.checkbox-col + td {
-    padding-left: 5px !important; /* Tightens the gap to the Date column */
-}
-
 /* 3. Ensure the table doesn't force extra space */
 .data-table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed; 
+}
+
+.data-table th:first-child, 
+.data-table td:first-child {
+    width: 4% !important;        /* Tells it to be as small as possible */
+    white-space: nowrap;
+    padding: 12px 0 12px 15px !important; /* Removes right-side dead space */
+    text-align: center;
 }
 
 
