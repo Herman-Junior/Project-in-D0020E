@@ -18,13 +18,15 @@ def get_latest_sensor_data(start_date=None, end_date=None, start_time=None, end_
 
         # SQL Query: Selects only the three desired display fields
         query = """
-            SELECT 
-                DATE(`timestamp`) AS `date`,       -- Extracts DATE object from MySQL
-                TIME(`timestamp`) AS `time`,        -- Extracts TIME object/string from MySQL
-                moisture AS `Moisture`              -- Uses the moisture reading
+           SELECT 
+                sensor_id,
+                DATE(`timestamp`) AS `date`,
+                TIME(`timestamp`) AS `time`,
+                moisture AS `Moisture`
             FROM `SENSOR_DATA`
+            WHERE is_deleted = 0
         """
-        
+
         conditions = []
         params = []
         if start_date:
@@ -37,7 +39,7 @@ def get_latest_sensor_data(start_date=None, end_date=None, start_time=None, end_
             params.append(full_end)          
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-                
+
         query += f" ORDER BY `timestamp` DESC LIMIT {limit}"
 
         try:
@@ -68,10 +70,10 @@ def get_latest_weather_data(start_date=None, end_date=None, start_time=None, end
                 daily_rain, rain_rate
             FROM `WEATHER_DATA`
         """
-        
+
         conditions = []
         params = []
-        
+
         # 2. Filtering Logic (Using the main DATETIME column for consistency)
         if start_date:
             full_start = f"{start_date} {start_time if start_time else '00:00:00'}"
@@ -90,7 +92,7 @@ def get_latest_weather_data(start_date=None, end_date=None, start_time=None, end
             cursor.execute(query, params)
             raw_data = cursor.fetchall()
             return format_for_frontend(raw_data)
-        
+
         except Exception as e:
             print(f"Weather Database Query Error: {e}")
             return [{'error': f"Failed to load weather data: {e}"}]
@@ -128,7 +130,7 @@ def get_combined_data(start_date=None, end_date=None, start_time=None, end_time=
             FROM WEATHER_DATA W
             RIGHT JOIN SENSOR_DATA S ON W.timestamp = S.timestamp
         """
-        
+
         # Build the wrapper query for filtering and sorting
         final_query = f"SELECT * FROM ({query}) AS combined_result"
         conditions = []
@@ -159,7 +161,7 @@ def get_combined_data(start_date=None, end_date=None, start_time=None, end_time=
             for row in data:
                 row.pop('sort_ts', None)
             return data 
-        
+
         except Exception as e:
             print(f"Combined Query Error: {e}")
             return [{'error': str(e)}]
@@ -234,7 +236,7 @@ def get_audio_environmental_data_logic(audio_id):
 
         if not audio:
             return {"error": "Audio recroding not found"}
-        
+
         # Fetch Sensor Data in that window
         cursor.execute("""
             SELECT * FROM SENSOR_DATA 
@@ -263,25 +265,25 @@ def handle_audio_upload_logic(file):
     """
     if not os.path.exists(AUDIO_DIRECTORY):
         os.makedirs(AUDIO_DIRECTORY, exist_ok=True)
-            
+
     filename = secure_filename(file.filename)
     save_path = os.path.join(AUDIO_DIRECTORY, filename)
-    
+
     try:
         # Save the physical file
         file.save(save_path)
-        
+
         # Get numbers from the file using your utility
         metadata = extract_audio_metadata(save_path)
 
         if not metadata or 'start_timestamp' not in metadata:
             raise Exception("Metadata extraction failed. Is the filename formatted correctly?")
-        
+
         # Logic: Convert metadata to DB-ready objects
         start_time_dt = datetime.fromtimestamp(metadata['start_timestamp'])
         duration = metadata.get('duration', 0)
         end_time_dt = start_time_dt + timedelta(seconds=duration)
-        
+
         audio_dict = {
             'start_timestamp': metadata['start_timestamp'],
             'end_timestamp': metadata['start_timestamp'] + metadata.get('duration', 0),
@@ -290,7 +292,7 @@ def handle_audio_upload_logic(file):
 
         # Save to Database
         success, db_message = insert_audio_data(audio_dict)
-        
+
         if not success:
             raise Exception(f"Database insertion failed: {db_message}")
 
@@ -300,4 +302,3 @@ def handle_audio_upload_logic(file):
         # CRITICAL CLEANUP: If anything fails after saving, delete the file!
         if os.path.exists(save_path):
             os.remove(save_path)
-        return False, str(e)

@@ -106,4 +106,5 @@ document.addEventListener('DOMContentLoaded', () => {
         endpoint: '/api/v1/audio/upload',
         fileTypeLabel: 'Audio'
     });
+
 });
