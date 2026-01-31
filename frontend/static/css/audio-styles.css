@@ -74,6 +74,6 @@
 .table-container + .section-title,
 .table-container + h2 {
     margin-top: px !important; 
-    padding-top: 20px;20
+    padding-top: 20px;
     border-top: 1px solid rgba(255,255,255,0.05); /* Optional: subtle line between sections */
 }
