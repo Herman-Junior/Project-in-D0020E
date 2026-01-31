@@ -162,6 +162,38 @@ def get_latest_audio_data(limit=10):
 # Soft deletion
 # =================
 
+def perform_batch_delete(ids, data_type):
+    with db_session() as conn:
+        if not conn: return False
+        cursor = conn.cursor()
+        
+        # Bestäm tabell och kolumn baserat på data_type från frontenden
+        if data_type == 'sensor':
+            table, pk = 'SENSOR_DATA', 'sensor_id'
+        elif data_type == 'weather':
+            table, pk = 'WEATHER_DATA', 'weather_id'
+        else:
+            return False
+
+        # Skapa rätt antal %s för din SQL-fråga (t.ex. %s, %s, %s)
+        placeholders = ', '.join(['%s'] * len(ids))
+        query = f"UPDATE {table} SET is_deleted = 1 WHERE {pk} IN ({placeholders})"
+        
+        try:
+            # Vi skickar med hela listan med ID:n som en tuple
+            cursor.execute(query, tuple(ids))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Database Error: {e}")
+            return False
+
+
+
+
+
+
+
 #Hide row in weather data
 def delete_weather_data(weather_id):
     with db_session() as conn:
@@ -175,16 +207,16 @@ def delete_weather_data(weather_id):
         return True
     
 #Hide row in Sensor data
-def delete_sensor_data(sensor_id):
-    with db_session() as conn:
-        if not conn:
-            return False
-        cursor = conn.cursor()
-        query="UPDATE SENSOR_DATA SET is_deleted = 1 WHERE sensor_id = %s"
-        cursor.execute(query,(sensor_id,))
-        conn.commit()
-
-        return True
+#def delete_sensor_data(sensor_id):
+#    with db_session() as conn:
+#        if not conn:
+#            return False
+#        cursor = conn.cursor()
+#        query="UPDATE SENSOR_DATA SET is_deleted = 1 WHERE sensor_id = %s"
+#        cursor.execute(query,(sensor_id,))
+#       conn.commit()
+#
+#        return True
     
 #Hide row in Audio recording data 
 def delete_audio_recording(id):

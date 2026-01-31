@@ -29,7 +29,7 @@ app.add_url_rule('/api/v1/audio/upload', 'upload_audio_metadata',
 app.add_url_rule('/api/v1/audio/environmental', 'get_audio_with_environmental_api', 
                 get_audio_environmental_api)
 
-app.add_url_rule('/api/v1/batch-delete', 'batch_delete_api', batch_delete_api, methods=['POST'])
+app.add_url_rule('/api/v1/delete', 'batch_delete_api', batch_delete_api, methods=['POST'])
 
 
 
