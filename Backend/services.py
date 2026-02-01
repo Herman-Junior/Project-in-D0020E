@@ -51,7 +51,8 @@ def get_latest_weather_data(start_date=None, end_date=None, start_time=None, end
         cursor = conn.cursor()
 
         query = """
-            SELECT 
+            SELECT
+                weather_id, 
                 DATE(`timestamp`) AS `date`, TIME(`timestamp`) AS `time`,
                 in_temperature, out_temperature, 
                 in_humidity, out_humidity, 
