@@ -15,6 +15,42 @@ def format_timestamp(unix_ts):
         'time':         dt.strftime('%H:%M:%S')           
     }
 
+def timestamp_filter(start_date, end_date, start_time, end_time, timestamp_col='`timestamp`' ):
+    """
+    Centralized logic to build SQL conditions and parameters for date/time filtering.
+    """
+    conditions = []
+    params = []
+
+    # Helper to ensure time is HH:MM:SS
+    def fix_time(t, default):
+        if not t or not t.strip(): return default
+        t = t.strip().rstrip(':') # Remove any trailing colons
+        if len(t) == 5: return f"{t}:00" if default == "00:00:00" else f"{t}:59"
+        return t
+
+    # 1. Start Filter
+    if start_date:
+        full_start = f"{start_date} {fix_time(start_time, '00:00:00')}"
+        conditions.append(f"{timestamp_col} >= %s")
+        params.append(full_start)
+    elif start_time and start_time.strip():
+        # If ONLY time is provided, filter by time of day
+        conditions.append(f"TIME({timestamp_col}) >= %s")
+        params.append(fix_time(start_time, "00:00:00"))
+
+    # 2. End Filter
+    if end_date:
+        full_end = f"{end_date} {fix_time(end_time, '23:59:59')}"
+        conditions.append(f"{timestamp_col} <= %s")
+        params.append(full_end)
+    elif end_time and end_time.strip():
+        conditions.append(f"TIME({timestamp_col}) <= %s")
+        params.append(fix_time(end_time, "23:59:59"))
+
+    return conditions, params   
+
+
 def format_for_frontend(data):
     """Concerts DB-object to JSON-string."""
     if not data: return []

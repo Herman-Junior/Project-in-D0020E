@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from config import AUDIO_DIRECTORY
 from db import db_session, insert_audio_data
-from utils import format_for_frontend, extract_audio_metadata
+from utils import format_for_frontend, extract_audio_metadata, timestamp_filter
 
 # =========
 # DATA GET
@@ -27,25 +27,14 @@ def get_latest_sensor_data(start_date=None, end_date=None, start_time=None, end_
             WHERE is_deleted = 0
         """
 
-        conditions = []
-        params = []
-        if start_date:
-            full_start = f"{start_date} {start_time if start_time else '00:00:00'}"
-            conditions.append("`timestamp` >= %s") 
-            params.append(full_start)  
-        if end_date:
-            full_end = f"{end_date} {end_time if end_time else '23:59:59'}"
-            conditions.append("`timestamp` <= %s")
-            params.append(full_end)          
+        conditions, params = timestamp_filter(start_date, end_date, start_time, end_time)          
         if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
+            query += " AND " + " AND ".join(conditions)
         query += f" ORDER BY `timestamp` DESC LIMIT {limit}"
 
         try:
-            cursor.execute(query, params)
-            raw_data = cursor.fetchall()      
-            return format_for_frontend(raw_data)
+            cursor.execute(query, params)      
+            return format_for_frontend(cursor.fetchall())
         except Exception as e:
             print(f"Sensor Database Query Error: {e}")
             return [{'error': f"Failed to load sensor data: {e}"}]
@@ -69,30 +58,18 @@ def get_latest_weather_data(start_date=None, end_date=None, start_time=None, end
                 wind_speed, wind_direction, 
                 daily_rain, rain_rate
             FROM `WEATHER_DATA`
+            WHERE is_deleted = 0
         """
 
-        conditions = []
-        params = []
-
-        # 2. Filtering Logic (Using the main DATETIME column for consistency)
-        if start_date:
-            full_start = f"{start_date} {start_time if start_time else '00:00:00'}"
-            conditions.append("`timestamp` >= %s") 
-            params.append(full_start)  
-        if end_date:
-            full_end = f"{end_date} {end_time if end_time else '23:59:59'}"
-            conditions.append("`timestamp` <= %s")
-            params.append(full_end)          
+        conditions, params = timestamp_filter(start_date, end_date, start_time, end_time)          
         if conditions:
-            query += " WHERE " + " AND ".join(conditions)
+            query += " AND " + " AND ".join(conditions)
                 
         query += f" ORDER BY `timestamp` DESC LIMIT {limit}"
 
         try:
             cursor.execute(query, params)
-            raw_data = cursor.fetchall()
-            return format_for_frontend(raw_data)
-
+            return format_for_frontend(cursor.fetchall())
         except Exception as e:
             print(f"Weather Database Query Error: {e}")
             return [{'error': f"Failed to load weather data: {e}"}]
@@ -107,7 +84,7 @@ def get_combined_data(start_date=None, end_date=None, start_time=None, end_time=
 
         # We use COALESCE(W.col, S.col) to pick whichever table has the data.
         # This ensures that even if Weather is missing, we see the Sensor's Date/Time.
-        query = """
+        subquery = """
             SELECT 
                 COALESCE(W.date, S.date) AS date,
                 COALESCE(W.time, S.time) AS time,
@@ -132,24 +109,13 @@ def get_combined_data(start_date=None, end_date=None, start_time=None, end_time=
         """
 
         # Build the wrapper query for filtering and sorting
-        final_query = f"SELECT * FROM ({query}) AS combined_result"
-        conditions = []
-        params = []
+        final_query = f"SELECT * FROM ({subquery}) AS combined_result"
+        
+        conditions, params = timestamp_filter(start_date, end_date, start_time, end_time, 'sort_ts')
 
-        # Logic for Start DateTime
-        if start_date:
-            # If user doesn't provide a time, default to start of day (00:00:00)
-            full_start = f"{start_date} {start_time if start_time else '00:00:00'}"
-            conditions.append("sort_ts >= %s")
-            params.append(full_start)
-
-        # Logic for End DateTime
-        if end_date:
-            # If user doesn't provide a time, default to end of day (23:59:59)
-            full_end = f"{end_date} {end_time if end_time else '23:59:59'}"
-            conditions.append("sort_ts <= %s")
-            params.append(full_end)
-
+        if conditions:
+            final_query += " WHERE " + " AND ".join(conditions)
+        
         final_query += f" ORDER BY sort_ts DESC LIMIT {limit}"
 
         try:
