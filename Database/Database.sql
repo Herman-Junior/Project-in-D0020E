@@ -1,12 +1,9 @@
--- 1. Completely remove the database if it exists
--- This deletes all tables, data, and constraints in one go.
-DROP DATABASE IF EXISTS WEATHER_DB;
 
--- 2. Re-create the database
+-- 1. Re-create the database
 CREATE DATABASE WEATHER_DB;
 USE WEATHER_DB;
 
--- 3. Re-create the tables in the correct order
+-- 2. Re-create the tables in the correct order
 -- (Parent tables must be created before Child tables that reference them)
 
 CREATE TABLE AUDIO_RECORDING (
