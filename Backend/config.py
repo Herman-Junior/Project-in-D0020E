@@ -4,9 +4,9 @@ import os
 # Inside Docker, 'host' must match the service name in docker-compose.yml
 DB_CONFIG = {
     'host': os.getenv('DB_HOST', 'db'), 
-    'user': 'root',
-    'password': '040813', # Match this to your MYSQL_ROOT_PASSWORD
-    'database': 'WEATHER_DB'
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD'), 
+    'database': os.getenv('DB_NAME')
 }
 
 # --- FOLDER PATHS ---
