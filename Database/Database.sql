@@ -11,7 +11,8 @@ CREATE TABLE AUDIO_RECORDING (
     date DATE,
     start_time DATETIME NOT NULL,
     end_time DATETIME NOT NULL,
-    file_path VARCHAR(255) NOT NULL UNIQUE -- New code: file_path must be UNIQUE so we can 'REPLACE' if the file is re-uploaded
+    file_path VARCHAR(255) NOT NULL UNIQUE, -- New code: file_path must be UNIQUE so we can 'REPLACE' if the file is re-uploaded
+    is_deleted TINYINT(1) DEFAULT 0 -- Order of operations
 );
 
 -- Weather table
@@ -27,7 +28,8 @@ CREATE TABLE WEATHER_DATA (
     wind_speed DOUBLE,
     wind_direction VARCHAR(10),
     daily_rain DOUBLE,
-    rain_rate DOUBLE
+    rain_rate DOUBLE,
+    is_deleted TINYINT(1) DEFAULT 0 -- Order of operations
 );
 
 CREATE TABLE SENSOR_DATA (
@@ -35,7 +37,8 @@ CREATE TABLE SENSOR_DATA (
     timestamp DATETIME NOT NULL UNIQUE, -- Uniquie Contraint
     date DATE,
     time TIME,
-    moisture DOUBLE
+    moisture DOUBLE,
+    is_deleted TINYINT(1) DEFAULT 0 -- Order of operations
 );
 
 CREATE TABLE ALL_DATA (
@@ -53,6 +56,19 @@ CREATE TABLE ALL_DATA (
         REFERENCES SENSOR_DATA(sensor_id)
         ON DELETE SET NULL
 );
+
+-- This creates a shortcut to see all deleted entries
+CREATE VIEW DELETED_WEATHER AS
+SELECT * FROM WEATHER_DATA 
+WHERE is_deleted = 1;
+
+CREATE VIEW DELETED_SENSOR AS
+SELECT * FROM SENSOR_DATA   
+WHERE is_deleted = 1;
+
+CREATE VIEW DELETED_AUDIO AS
+SELECT * FROM AUDIO_RECORDING  
+WHERE is_deleted = 1;
 
 
 SELECT
@@ -80,32 +96,7 @@ WHERE
     AND A.timestamp = '2025-12-13 19:00:00'; -- Filter on the timestamp you just inserted
 
 
--- Add soft delete flag to Audio recordings
-ALTER TABLE AUDIO_RECORDING 
-ADD COLUMN is_deleted TINYINT(1) DEFAULT 0;
 
--- Add soft delete flag to Weather data
-ALTER TABLE WEATHER_DATA 
-ADD COLUMN is_deleted TINYINT(1) DEFAULT 0;
 
--- Add soft delete flag to Sensor data
-ALTER TABLE SENSOR_DATA 
-ADD COLUMN is_deleted TINYINT(1) DEFAULT 0;
 
--- This creates a shortcut to see all deleted entries
-CREATE VIEW DELETED_WEATHER AS
-SELECT * FROM WEATHER_DATA 
-WHERE is_deleted = 1;
-
-CREATE VIEW DELETED_SENSOR AS
-SELECT * FROM SENSOR_DATA   
-WHERE is_deleted = 1;
-
-CREATE VIEW DELETED_AUDIO AS
-SELECT * FROM AUDIO_RECORDING  
-WHERE is_deleted = 1;
-
-ALTER TABLE SENSOR_DATA ADD COLUMN is_deleted TINYINT(1) DEFAULT 0;
-
-ALTER TABLE WEATHER_DATA ADD COLUMN is_deleted TINYINT(1) DEFAULT 0;
 
