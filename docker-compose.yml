@@ -7,6 +7,8 @@ services:
     environment:
       MYSQL_DATABASE: WEATHER_DB
       MYSQL_ROOT_PASSWORD: '040813'
+    volumes:
+      -./Database/Database.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "3306:3306"
 
