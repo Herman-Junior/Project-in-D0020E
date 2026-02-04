@@ -1,6 +1,6 @@
 
 -- 1. Re-create the database
-CREATE DATABASE WEATHER_DB;
+CREATE DATABASE IF NOT EXISTS WEATHER_DB;
 USE WEATHER_DB;
 
 -- 2. Re-create the tables in the correct order
