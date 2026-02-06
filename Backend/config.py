@@ -1,5 +1,7 @@
+from dotenv import load_dotenv
 import os
 
+load_dotenv()
 # --- DATABASE CONFIG ---
 # Inside Docker, 'host' must match the service name in docker-compose.yml
 DB_CONFIG = {
