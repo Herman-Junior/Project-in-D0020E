@@ -156,7 +156,31 @@ def get_latest_audio_data(limit=10):
         cursor.execute(query, (limit,))
         return cursor.fetchall()
     
-
+def delete_audio_by_start_time(formatted_start_time):
+    """
+    Checks if an audio file exists with the exact same start time.
+    Returns the file_path of the old file so we can delete it from the folder.
+    """
+    old_file_path = None
+    
+    with db_session() as conn:
+        if not conn: return None
+        cursor = conn.cursor()
+        
+        # 1. Find the path of the existing file (if any)
+        check_query = "SELECT file_path FROM AUDIO_RECORDING WHERE start_time = %s"
+        cursor.execute(check_query, (formatted_start_time,))
+        result = cursor.fetchone()
+        
+        if result:
+            old_file_path = result[0] # Get the path string
+            
+            # 2. Delete the database row
+            delete_query = "DELETE FROM AUDIO_RECORDING WHERE start_time = %s"
+            cursor.execute(delete_query, (formatted_start_time,))
+            conn.commit()
+            
+    return old_file_path
 
 # =================
 # Soft deletion

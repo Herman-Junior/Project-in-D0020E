@@ -3,8 +3,8 @@ import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from config import AUDIO_DIRECTORY
-from db import db_session, insert_audio_data
-from utils import format_for_frontend, extract_audio_metadata, timestamp_filter
+from db import db_session, insert_audio_data, delete_audio_by_start_time
+from utils import extract_audio_metadata, format_timestamp
 
 # =========
 # DATA GET
@@ -18,7 +18,7 @@ def get_latest_sensor_data(start_date=None, end_date=None, start_time=None, end_
 
         # SQL Query: Selects only the three desired display fields
         query = """
-           SELECT 
+            SELECT 
                 sensor_id,
                 DATE(`timestamp`) AS `date`,
                 TIME(`timestamp`) AS `time`,
@@ -225,47 +225,60 @@ def get_audio_environmental_data_logic(audio_id):
             "weather_data": format_for_frontend(weather)
         }
 
-
 def handle_audio_upload_logic(file):
-    """
-    Orchestrates: Saving file -> Extracting Metadata -> DB Insertion -> Cleanup on failure.
-    """
     if not os.path.exists(AUDIO_DIRECTORY):
         os.makedirs(AUDIO_DIRECTORY, exist_ok=True)
 
     filename = secure_filename(file.filename)
-    save_path = os.path.join(AUDIO_DIRECTORY, filename)
+    final_path = os.path.join(AUDIO_DIRECTORY, filename)
+    temp_path = os.path.join(AUDIO_DIRECTORY, f"temp_{filename}")
 
     try:
-        # Save the physical file
-        file.save(save_path)
+        # 1. Save as TEMP file first to read the date
+        file.save(temp_path)
 
-        # Get numbers from the file using your utility
-        metadata = extract_audio_metadata(save_path)
-
+        # 2. Get the Date/Time (Metadata) from the file
+        metadata = extract_audio_metadata(temp_path)
         if not metadata or 'start_timestamp' not in metadata:
-            raise Exception("Metadata extraction failed. Is the filename formatted correctly?")
+            raise Exception("Could not read date from file.")
 
-        # Logic: Convert metadata to DB-ready objects
-        start_time_dt = datetime.fromtimestamp(metadata['start_timestamp'])
-        duration = metadata.get('duration', 0)
-        end_time_dt = start_time_dt + timedelta(seconds=duration)
+        # Convert Unix timestamp to MySQL format (YYYY-MM-DD HH:MM:SS)
+        formatted_time = format_timestamp(metadata['start_timestamp'])
+        mysql_start_time = formatted_time['timestamp']
 
-        audio_dict = {
-            'start_timestamp': metadata['start_timestamp'],
-            'end_timestamp': metadata['start_timestamp'] + metadata.get('duration', 0),
-            'filepath': save_path
-        }
+        # ---------------------------------------------------------
+        # 3. CHECK DUPLICATES: "Kollar andra filer om har samma datum"
+        # ---------------------------------------------------------
+        old_file_path = delete_audio_by_start_time(mysql_start_time)
 
+        if old_file_path:
+            print(f"Duplicate found! Removing old file: {old_file_path}")
+            # Remove the OLD file from the computer folder
+            if os.path.exists(old_file_path):
+                os.remove(old_file_path)
+
+        # ---------------------------------------------------------
+        # 4. SAVE NEW: "Laddar upp"
+        # ---------------------------------------------------------
+        
+        # Prepare metadata for final save
+        metadata['filepath'] = final_path
+        metadata['filename'] = filename
+        
         # Save to Database
-        success, db_message = insert_audio_data(audio_dict)
-
+        success, db_result = insert_audio_data(metadata)
         if not success:
-            raise Exception(f"Database insertion failed: {db_message}")
+            raise Exception(db_result)
 
-        return True, {"id": db_message, "filename": filename, "path": save_path}
+        # Rename Temp file to Final filename
+        if os.path.exists(final_path):
+            os.remove(final_path) # Safety check
+        os.rename(temp_path, final_path)
+
+        return True, {"id": db_result, "filename": filename}
 
     except Exception as e:
-        # CRITICAL CLEANUP: If anything fails after saving, delete the file!
-        if os.path.exists(save_path):
-            os.remove(save_path)
+        # If anything fails, delete the temp file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return False, str(e)
