@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Trash Can{% endblock %}
+
+{% block content %}
+<h1>Trash Can</h1>
+
+<div class="container upload-box" style="margin-top: 20px;">
+    <h2>Deleted Audio Recordings</h2>
+    <div class="trash-list">
+        {% if audio %}
+            {% for item in audio %}
+            <div class="trash-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #444;">
+                <span>{{ item.filename }}</span>
+                <button onclick="restoreItems(['{{ item.id }}'], 'audio')" class="insert-btn" style="background: #28a745; width: auto; padding: 5px 15px;">Restore</button>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #888;">No deleted audio found.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container upload-box" style="margin-top: 20px;">
+    <h2>Deleted Sensor Data</h2>
+    <div class="trash-list">
+        {% if sensors %}
+            {% for item in sensors %}
+            <div class="trash-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #444;">
+                <span>{{ item.timestamp }} - Moisture: {{ item.moisture }}%</span>
+                <button onclick="restoreItems(['{{ item.sensor_id }}'], 'sensor')" class="insert-btn" style="background: #28a745; width: auto; padding: 5px 15px;">Restore</button>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #888;">No deleted sensor data found.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container upload-box" style="margin-top: 20px;">
+    <h2>Deleted Weather Data</h2>
+    <div class="trash-list">
+        {% if weather %}
+            {% for item in weather %}
+            <div class="trash-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #444;">
+                <span>{{ item.timestamp }} - Temp: {{ item.out_temperature }}°C</span>
+                <button onclick="restoreItems(['{{ item.weather_id }}'], 'weather')" class="insert-btn" style="background: #28a745; width: auto; padding: 5px 15px;">Restore</button>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #888;">No deleted weather data found.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function restoreItems(ids, type) {
+    if (!confirm(`Restore these ${type} items?`)) return;
+    
+    try {
+        const response = await fetch('/api/v1/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, type: type })
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert("Error restoring data.");
+        }
+    } catch (e) {
+        alert("Network error: " + e.message);
+    }
+}
+</script>
+{% endblock %}

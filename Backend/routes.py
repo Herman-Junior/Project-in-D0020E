@@ -213,7 +213,7 @@ def audio_page():
         # Query matching your SQL schema
         # We fetch start_time to show the user when it was recorded
         query = "SELECT id, date, start_time, file_path FROM AUDIO_RECORDING WHERE is_deleted = 0 ORDER BY start_time DESC"
-        
+
         cursor.execute(query)
         recordings = cursor.fetchall()
 
@@ -239,3 +239,6 @@ def audio_page():
 
 def audio_details_page():
     return render_template('audio_details.html')
+
+def trash_page():
+    return render_template('trashcan.html')
