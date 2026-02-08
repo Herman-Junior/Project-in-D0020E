@@ -1,6 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
     const content = document.getElementById('correlation-content');
     const title = document.getElementById('selected-audio-title');
+    const deleteButton = document.getElementById('delete-selected-btn')
+
+    if (deleteButton) {
+        deleteButton.addEventListener('click', deleteSelected);
+    }
 
     // --- 1. LIST PAGE LOGIC ---
     // This only runs if we are on the page with audio items
@@ -12,7 +17,27 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = `/audio/details?id=${audioId}&name=${encodeURIComponent(filename)}`;
         });
     });
-
+    const bulkContainer = document.getElementById('bulk-actions-container');
+    const selectedCountSpan = document.getElementById('selected-count');
+    const checkboxes = document.querySelectorAll('.delete-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+    });
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            const checkedCount = document.querySelectorAll('.delete-checkbox:checked').length;
+        
+            if (checkedCount > 0) {
+                bulkContainer.style.display = 'flex'; // Show the button
+                selectedCountSpan.textContent = checkedCount;
+            } else {
+                bulkContainer.style.display = 'none'; // Hide if none selected
+            }
+        });
+    });
     // --- 2. DETAILS PAGE LOGIC ---
     const urlParams = new URLSearchParams(window.location.search);
     const idFromUrl = urlParams.get('id');
@@ -37,6 +62,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    if (deleteButton) {
+        deleteButton.addEventListener('click', deleteSelected);
+    }
+
+    async function deleteSelected() {
+        const selectedCheckboxes = document.querySelectorAll('.delete-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-id'));
+
+        // Rättad jämförelse (===)
+        if (selectedIds.length === 0) {
+            alert('No rows selected for deletion.');
+            return;
+        }
+
+        if (confirm("Are you sure about deleting the selected rows?")) {
+            try {
+                const response = await fetch('/api/v1/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selectedIds, type: 'audio' })
+                });
+
+                if (response.ok) {
+                    alert('Selected rows deleted successfully.');
+                    location.reload(); // Ladda om listan direkt
+                } else {
+                    alert("Något gick fel vid raderingen.");
+                }
+            } catch (e) {
+                alert("Nätverksfel: " + e.message);
+            }
+        }
+    }
 function renderData(data) {
     let html = '';
 

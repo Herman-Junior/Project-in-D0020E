@@ -22,9 +22,14 @@
             <div class="container upload-box audio-item" 
                 data-audio-id="{{ record.id }}" 
                 data-filename="{{ record.filename }}"
-                style="cursor: pointer;">
+                style="display: flex !important; flex-direction: row !important; align-items: center !important; gap: 20px; cursor: pointer; padding: 20px;">
+
+                <div class="checkbox-container" style="display: flex; align-items: center;">
+                    <input type="checkbox" class="delete-checkbox" data-id="{{ record.id }}" 
+                        style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
                 
-                <div style="text-align: left;">
+                <div style="text-align: left; flex-grow: 1">
                     <h2 style="margin: 0;">{{ record.filename }}</h2>
                     <p style="color: var(--secondary-text-clr); margin-top: 5px;">
                         {{ record.date }} | {{ record.start_time }}
@@ -37,6 +42,12 @@
                 <p class="status-message">No audio recordings found.</p>
             </div>
         {% endif %}
+    </div>
+
+    <div id="bulk-actions-container" class="container" style="display: none; margin-bottom: 10px;">
+        <button id="delete-selected-btn" class="insert-btn" style="background-color: #00c8ff;">
+            Delete selected (<span id="selected-count">0</span>)
+        </button>
     </div>
 
     <div id="correlation-panel" class="container upload-box" style="display: none; margin-top: 30px;">

@@ -212,7 +212,8 @@ def audio_page():
         
         # Query matching your SQL schema
         # We fetch start_time to show the user when it was recorded
-        query = "SELECT id, date, start_time, file_path FROM AUDIO_RECORDING ORDER BY start_time DESC"
+        query = "SELECT id, date, start_time, file_path FROM AUDIO_RECORDING WHERE is_deleted = 0 ORDER BY start_time DESC"
+        
         cursor.execute(query)
         recordings = cursor.fetchall()
 
