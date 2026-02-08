@@ -196,6 +196,8 @@ def perform_batch_delete(ids, data_type):
             table, pk = 'SENSOR_DATA', 'sensor_id'
         elif data_type == 'weather':
             table, pk = 'WEATHER_DATA', 'weather_id'
+        elif data_type == 'audio': 
+            table, pk = 'AUDIO_RECORDING', 'id'
         else:
             return False
 
@@ -212,86 +214,59 @@ def perform_batch_delete(ids, data_type):
             print(f"Database Error: {e}")
             return False
 
-
-
-
-
-
+#Hide row in Sensor data
+def delete_sensor_data(sensor_id):
+    return perform_batch_delete([sensor_id], 'sensor')
 
 #Hide row in weather data
 def delete_weather_data(weather_id):
-    with db_session() as conn:
-        if not conn:
-            return False
-        cursor = conn.cursor()
-        query="UPDATE WEATHER_DATA SET is_deleted = 1 WHERE weather_id = %s"
-        cursor.execute(query,(weather_id,))
-        conn.commit()
-
-        return True
-    
-#Hide row in Sensor data
-#def delete_sensor_data(sensor_id):
-#    with db_session() as conn:
-#        if not conn:
-#            return False
-#        cursor = conn.cursor()
-#        query="UPDATE SENSOR_DATA SET is_deleted = 1 WHERE sensor_id = %s"
-#        cursor.execute(query,(sensor_id,))
-#       conn.commit()
-#
-#        return True
+    return perform_batch_delete([weather_id],'weather')
     
 #Hide row in Audio recording data 
 def delete_audio_recording(id):
-    with db_session() as conn:
-        if not conn:
-            return False
-        cursor = conn.cursor()
-        query="UPDATE AUDIO_RECORDING SET is_deleted = 1 WHERE id = %s"
-        cursor.execute(query,(id,))
-        conn.commit()
-
-        return True
+    return perform_batch_delete([id], 'audio') 
     
 # =================
 # Regret deletion
 # =================
 
-def regret_weather_data_deletion(weather_id):
+def perform_batch_regret(ids, data_type):
     with db_session() as conn:
-        if not conn:
-            return False
+        if not conn: return False
         cursor = conn.cursor()
-        query="UPDATE WEATHER_DATA SET is_deleted = 0 WHERE weather_id = %s"
-        cursor.execute(query,(weather_id,))
-        conn.commit()
+        
+        # Bestäm tabell och kolumn baserat på data_type från frontenden
+        if data_type == 'sensor':
+            table, pk = 'SENSOR_DATA', 'sensor_id'
+        elif data_type == 'weather':
+            table, pk = 'WEATHER_DATA', 'weather_id'
+        elif data_type == 'audio': 
+            table, pk = 'AUDIO_RECORDING', 'id'
+        else:
+            return False
 
-        return True
+        # Skapa rätt antal %s för din SQL-fråga (t.ex. %s, %s, %s)
+        placeholders = ', '.join(['%s'] * len(ids))
+        query = f"UPDATE {table} SET is_deleted = 0 WHERE {pk} IN ({placeholders})"
+        
+        try:
+            # Vi skickar med hela listan med ID:n som en tuple
+            cursor.execute(query, tuple(ids))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Database Error: {e}")
+            return False
 
 def regret_sensor_data_deletion(sensor_id):
-    with db_session() as conn:
-        if not conn:
-            return False
-        cursor = conn.cursor()
-        query="UPDATE SENSOR_DATA SET is_deleted = 0 WHERE sensor_id = %s"
-        cursor.execute(query,(sensor_id,))
-        conn.commit()
+    return perform_batch_regret([sensor_id],'sensor')
 
-        return True
+def regret_weather_data_deletion(weather_id):
+    return perform_batch_regret([weather_id],'weather')
     
-
 def regret_audio_recording_deletion(id):
-    with db_session() as conn:
-        if not conn:
-            return False
-        cursor = conn.cursor()
-        query="UPDATE AUDIO_RECORDING SET is_deleted = 0 WHERE id = %s"
-        cursor.execute(query,(id,))
-        conn.commit()
+    return perform_batch_regret([id], 'audio')
 
-        return True
-    
 # =================
 # Vew deleted data
 # =================
