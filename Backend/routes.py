@@ -125,6 +125,17 @@ def batch_delete_api():
         print(f"Route error: {e}")
         return jsonify({'error': str(e)}), 500
 
+# --- Restore API --- #
+def restore_api():
+    from db import perform_batch_regret
+    data = request.get_json()
+    
+    # This uses your existing perform_batch_regret logic which handles 
+    # 'audio', 'sensor', and 'weather' types perfectly!
+    success = perform_batch_regret(data.get('ids'), data.get('type'))
+    
+    return jsonify({'success': success})
+
 def upload_csv_file():
     """
     Handles CSV uploads by passing the stream directly to the processor.
@@ -241,4 +252,13 @@ def audio_details_page():
     return render_template('audio_details.html')
 
 def trash_page():
-    return render_template('trashcan.html')
+    from db import view_deleted_audio_data, view_deleted_sensor_data, view_deleted_weather_data
+    import os
+
+    audio=view_deleted_audio_data()
+    for rec in audio:
+        if rec.get('file_path'):
+            rec['filename'] = os.path.basename(rec['file_path'])
+
+    return render_template('trashcan.html', audio=audio, sensors=view_deleted_sensor_data(), 
+    weather=view_deleted_weather_data())
