@@ -71,9 +71,63 @@
     text-decoration: underline;
 }
 
-.table-container + .section-title,
-.table-container + h2 {
-    margin-top: px !important; 
-    padding-top: 20px;
-    border-top: 1px solid rgba(255,255,255,0.05); /* Optional: subtle line between sections */
+
+/* --- TABELL-SEKTION (Ändrar endast tabellen) --- */
+
+.table-container {
+    display: block !important;
+    width: 100% !important;
+    max-width: calc(100vw - 300px) !important; /* Tar bort sidomenyns bredd + marginaler */
+    overflow-x: auto !important;
+    position: relative !important;
 }
+
+.data-table {
+    table-layout: auto !important; /* Låter kolumnerna anpassas inuti scroll-rutan */
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+/* Fix för Date/Time kolumnerna så de inte ärver checkbox-bredd */
+.data-table th:first-child, 
+.data-table td:first-child,
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) {
+    width: auto !important;
+    min-width: 120px !important;
+    white-space: nowrap !important;
+}
+
+/* Färgfixar - Matchar Lookup Data exakt */
+.data-table thead th {
+    background-color: var(--hover-clr) !important;
+    color: var(--accent-clr) !important;
+    text-transform: uppercase !important;
+    font-size: 0.85em !important;
+    border-bottom: 2px solid var(--accent-clr) !important;
+    padding: 12px 15px !important;
+    position: sticky !important;
+    top: 0 !important;
+    text-align: left !important;
+}
+
+.data-table td {
+    color: var(--secondary-text-clr) !important;
+    border-bottom: 1px solid var(--line-clr) !important;
+    padding: 12px 15px !important;
+    white-space: nowrap !important;
+}
+
+/* Zebra-striping */
+.data-table tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Rubrikerna ovanför tabellerna */
+.section-title {
+    margin-top: 25px !important;
+    margin-bottom: 10px !important;
+    color: var(--text-clr) !important;
+    font-size: 1.2em !important;
+}
+

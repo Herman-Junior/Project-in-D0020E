@@ -99,52 +99,44 @@ function renderData(data) {
     let html = '';
 
     if (!data.sensor_data?.length && !data.weather_data?.length) {
-        content.innerHTML = '<p class="status-message info">No correlated data found for this recording.</p>';
+        content.innerHTML = '<p class="status-message info">No correlated data found.</p>';
         return;
     }
 
     // --- SENSOR TABLE ---
     if (data.sensor_data?.length > 0) {
         html += '<h2 class="section-title">Correlated Sensor Data</h2>';
+        // LÄGG TILL DIVEN HÄR:
         html += '<div class="table-container"><table class="data-table"><thead><tr>';
-        html += '<th>Date</th><th>Time</th><th>Moisture</th>'; // Split header
+        html += '<th>Date</th><th>Time</th><th>Moisture</th>';
         html += '</tr></thead><tbody>';
         
         data.sensor_data.forEach(s => {
-            const [date, time] = s.timestamp.split(' '); // Split "YYYY-MM-DD HH:MM:SS"
-            html += `<tr>
-                <td>${date}</td>
-                <td>${time}</td>
-                <td>${s.moisture}%</td>
-            </tr>`;
+            const [date, time] = s.timestamp.split(' ');
+            html += `<tr><td>${date}</td><td>${time}</td><td>${s.moisture}%</td></tr>`;
         });
-        html += '</tbody></table></div>';
+        html += '</tbody></table></div>'; 
     }
 
     // --- WEATHER TABLE ---
     if (data.weather_data?.length > 0) {
         html += '<h2 class="section-title">Correlated Weather Data</h2>';
+        // LÄGG TILL DIVEN HÄR:
         html += '<div class="table-container"><table class="data-table"><thead><tr>';
-        // Headers matching your request
         html += '<th>Date</th><th>Time</th><th>Daily Rain</th><th>In Hum</th><th>In Temp</th><th>Out Hum</th><th>Out Temp</th><th>Rain Rate</th><th>Wind Dir</th><th>Wind Speed</th>';
         html += '</tr></thead><tbody>';
         
         data.weather_data.forEach(w => {
             const [date, time] = w.timestamp.split(' ');
             html += `<tr>
-                <td>${date}</td>
-                <td>${time}</td>
-                <td>${w.daily_rain || 0} mm</td>
-                <td>${w.in_humidity || 0}%</td>
-                <td>${w.in_temperature || 0}°C</td>
-                <td>${w.out_humidity || 0}%</td>
-                <td>${w.out_temperature || 0}°C</td>
-                <td>${w.rain_rate || 0} mm/h</td>
-                <td>${w.wind_direction || 'N/A'}</td>
-                <td>${w.wind_speed || 0} m/s</td>
+                <td>${date}</td><td>${time}</td>
+                <td>${w.daily_rain || 0} mm</td><td>${w.in_humidity || 0}%</td>
+                <td>${w.in_temperature || 0}°C</td><td>${w.out_humidity || 0}%</td>
+                <td>${w.out_temperature || 0}°C</td><td>${w.rain_rate || 0} mm/h</td>
+                <td>${w.wind_direction || 'N/A'}</td><td>${w.wind_speed || 0} m/s</td>
             </tr>`;
         });
-        html += '</tbody></table></div>';
+        html += '</tbody></table></div>'; 
     }
 
     content.innerHTML = html; 
