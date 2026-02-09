@@ -156,31 +156,47 @@ def get_latest_audio_data(limit=10):
         cursor.execute(query, (limit,))
         return cursor.fetchall()
     
-def delete_audio_by_start_time(formatted_start_time):
+def get_audio_entry_by_time(start_time):
     """
-    Checks if an audio file exists with the exact same start time.
-    Returns the file_path of the old file so we can delete it from the folder.
+    Hämtar ID och filväg för en inspelning baserat på starttid.
+    Används för att kolla dubbletter utan att ta bort raden.
     """
-    old_file_path = None
-    
-    with db_session() as conn:
+    with db_session(dict_cursor=True) as conn:
         if not conn: return None
         cursor = conn.cursor()
-        
-        # 1. Find the path of the existing file (if any)
-        check_query = "SELECT file_path FROM AUDIO_RECORDING WHERE start_time = %s"
-        cursor.execute(check_query, (formatted_start_time,))
-        result = cursor.fetchone()
-        
-        if result:
-            old_file_path = result[0] # Get the path string
-            
-            # 2. Delete the database row
-            delete_query = "DELETE FROM AUDIO_RECORDING WHERE start_time = %s"
-            cursor.execute(delete_query, (formatted_start_time,))
+        query = "SELECT id, file_path FROM AUDIO_RECORDING WHERE start_time = %s"
+        cursor.execute(query, (start_time,))
+        return cursor.fetchone()
+
+def update_audio_data(id, audio_metadata):
+    """
+    Uppdaterar en befintlig rad istället för att ta bort och skapa ny.
+    Detta behåller ID:t konstant.
+    """
+    end_ts = format_timestamp(audio_metadata.get('end_timestamp'))
+    
+    with db_session() as conn:
+        if not conn: return False, "DB connection failed"
+        try:
+            cursor = conn.cursor()
+            # Uppdatera filväg och sluttid. 
+            # Vi sätter också is_deleted = 0 ifall den var borttagen innan.
+            query = """
+                UPDATE AUDIO_RECORDING 
+                SET file_path = %s, end_time = %s, is_deleted = 0
+                WHERE id = %s
+            """
+            values = (
+                audio_metadata.get('filepath'),
+                end_ts['timestamp'],
+                id
+            )
+            cursor.execute(query, values)
             conn.commit()
-            
-    return old_file_path
+            return True, id
+        except Exception as e:
+            print(f"Audio Update Error: {e}")
+            return False, str(e)
 
 # =================
 # Soft deletion
