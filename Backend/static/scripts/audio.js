@@ -1,6 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
     const content = document.getElementById('correlation-content');
     const title = document.getElementById('selected-audio-title');
+    const deleteButton = document.getElementById('delete-selected-btn')
+
+    if (deleteButton) {
+        deleteButton.addEventListener('click', deleteSelected);
+    }
 
     // --- 1. LIST PAGE LOGIC ---
     // This only runs if we are on the page with audio items
@@ -12,7 +17,27 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = `/audio/details?id=${audioId}&name=${encodeURIComponent(filename)}`;
         });
     });
-
+    const bulkContainer = document.getElementById('bulk-actions-container');
+    const selectedCountSpan = document.getElementById('selected-count');
+    const checkboxes = document.querySelectorAll('.delete-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+    });
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            const checkedCount = document.querySelectorAll('.delete-checkbox:checked').length;
+        
+            if (checkedCount > 0) {
+                bulkContainer.style.display = 'flex'; // Show the button
+                selectedCountSpan.textContent = checkedCount;
+            } else {
+                bulkContainer.style.display = 'none'; // Hide if none selected
+            }
+        });
+    });
     // --- 2. DETAILS PAGE LOGIC ---
     const urlParams = new URLSearchParams(window.location.search);
     const idFromUrl = urlParams.get('id');
@@ -37,56 +62,81 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    if (deleteButton) {
+        deleteButton.addEventListener('click', deleteSelected);
+    }
+
+    async function deleteSelected() {
+        const selectedCheckboxes = document.querySelectorAll('.delete-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-id'));
+
+        // Rättad jämförelse (===)
+        if (selectedIds.length === 0) {
+            alert('No rows selected for deletion.');
+            return;
+        }
+
+        if (confirm("Are you sure about deleting the selected rows?")) {
+            try {
+                const response = await fetch('/api/v1/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selectedIds, type: 'audio' })
+                });
+
+                if (response.ok) {
+                    alert('Selected rows deleted successfully.');
+                    location.reload(); // Ladda om listan direkt
+                } else {
+                    alert("Något gick fel vid raderingen.");
+                }
+            } catch (e) {
+                alert("Nätverksfel: " + e.message);
+            }
+        }
+    }
 function renderData(data) {
     let html = '';
 
     if (!data.sensor_data?.length && !data.weather_data?.length) {
-        content.innerHTML = '<p class="status-message info">No correlated data found for this recording.</p>';
+        content.innerHTML = '<p class="status-message info">No correlated data found.</p>';
         return;
     }
 
     // --- SENSOR TABLE ---
     if (data.sensor_data?.length > 0) {
         html += '<h2 class="section-title">Correlated Sensor Data</h2>';
+        // LÄGG TILL DIVEN HÄR:
         html += '<div class="table-container"><table class="data-table"><thead><tr>';
-        html += '<th>Date</th><th>Time</th><th>Moisture</th>'; // Split header
+        html += '<th>Date</th><th>Time</th><th>Moisture</th>';
         html += '</tr></thead><tbody>';
         
         data.sensor_data.forEach(s => {
-            const [date, time] = s.timestamp.split(' '); // Split "YYYY-MM-DD HH:MM:SS"
-            html += `<tr>
-                <td>${date}</td>
-                <td>${time}</td>
-                <td>${s.moisture}%</td>
-            </tr>`;
+            const [date, time] = s.timestamp.split(' ');
+            html += `<tr><td>${date}</td><td>${time}</td><td>${s.moisture}%</td></tr>`;
         });
-        html += '</tbody></table></div>';
+        html += '</tbody></table></div>'; 
     }
 
     // --- WEATHER TABLE ---
     if (data.weather_data?.length > 0) {
         html += '<h2 class="section-title">Correlated Weather Data</h2>';
+        // LÄGG TILL DIVEN HÄR:
         html += '<div class="table-container"><table class="data-table"><thead><tr>';
-        // Headers matching your request
         html += '<th>Date</th><th>Time</th><th>Daily Rain</th><th>In Hum</th><th>In Temp</th><th>Out Hum</th><th>Out Temp</th><th>Rain Rate</th><th>Wind Dir</th><th>Wind Speed</th>';
         html += '</tr></thead><tbody>';
         
         data.weather_data.forEach(w => {
             const [date, time] = w.timestamp.split(' ');
             html += `<tr>
-                <td>${date}</td>
-                <td>${time}</td>
-                <td>${w.daily_rain || 0} mm</td>
-                <td>${w.in_humidity || 0}%</td>
-                <td>${w.in_temperature || 0}°C</td>
-                <td>${w.out_humidity || 0}%</td>
-                <td>${w.out_temperature || 0}°C</td>
-                <td>${w.rain_rate || 0} mm/h</td>
-                <td>${w.wind_direction || 'N/A'}</td>
-                <td>${w.wind_speed || 0} m/s</td>
+                <td>${date}</td><td>${time}</td>
+                <td>${w.daily_rain || 0} mm</td><td>${w.in_humidity || 0}%</td>
+                <td>${w.in_temperature || 0}°C</td><td>${w.out_humidity || 0}%</td>
+                <td>${w.out_temperature || 0}°C</td><td>${w.rain_rate || 0} mm/h</td>
+                <td>${w.wind_direction || 'N/A'}</td><td>${w.wind_speed || 0} m/s</td>
             </tr>`;
         });
-        html += '</tbody></table></div>';
+        html += '</tbody></table></div>'; 
     }
 
     content.innerHTML = html; 

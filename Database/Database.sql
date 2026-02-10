@@ -99,4 +99,10 @@ WHERE
 
 
 
+SELECT id, date, start_time, file_path 
+FROM AUDIO_RECORDING 
+WHERE is_deleted = 0 
+ORDER BY start_time DESC;
 
+SELECT * FROM AUDIO_RECORDING;
+SELECT * FROM WEATHER_DB.AUDIO_RECORDING;

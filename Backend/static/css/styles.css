@@ -286,7 +286,7 @@ main p{
 /* 2. Fix the cell behavior */
 .data-table th, 
 .data-table td {
-    padding: 12px 15px !important;
+    padding: 10px 12px !important;
     text-align: left;
     /* CRITICAL: This stops text from wrapping or sliding under other cells */
     white-space: nowrap; 
