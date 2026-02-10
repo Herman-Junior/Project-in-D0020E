@@ -246,6 +246,17 @@ def delete_weather_data(weather_id):
 
         return True
     
+#Hide row in Sensor data
+#def delete_sensor_data(sensor_id):
+#    with db_session() as conn:
+#        if not conn:
+#            return False
+#        cursor = conn.cursor()
+#        query="UPDATE SENSOR_DATA SET is_deleted = 1 WHERE sensor_id = %s"
+#        cursor.execute(query,(sensor_id,))
+#       conn.commit()
+#
+#        return True
     
 #Hide row in Audio recording data 
 def delete_audio_recording(id):
