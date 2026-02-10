@@ -3,9 +3,7 @@ import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from config import AUDIO_DIRECTORY
-from db import (
-    db_session, insert_audio_data, get_audio_entry_by_time, update_audio_data         
-)
+from db import db_session, insert_audio_data, delete_audio_by_start_time
 from utils import extract_audio_metadata, format_timestamp
 
 # =========
@@ -248,57 +246,36 @@ def handle_audio_upload_logic(file):
         formatted_time = format_timestamp(metadata['start_timestamp'])
         mysql_start_time = formatted_time['timestamp']
 
+        # ---------------------------------------------------------
+        # 3. CHECK DUPLICATES: "Kollar andra filer om har samma datum"
+        # ---------------------------------------------------------
+        old_file_path = delete_audio_by_start_time(mysql_start_time)
+
+        if old_file_path:
+            print(f"Duplicate found! Removing old file: {old_file_path}")
+            # Remove the OLD file from the computer folder
+            if os.path.exists(old_file_path):
+                os.remove(old_file_path)
+
+        # ---------------------------------------------------------
+        # 4. SAVE NEW: "Laddar upp"
+        # ---------------------------------------------------------
+        
         # Prepare metadata for final save
         metadata['filepath'] = final_path
         metadata['filename'] = filename
-
-        # ---------------------------------------------------------
-        # 3. CHECK DUPLICATES: Update if exists, Insert if new
-        # ---------------------------------------------------------
         
-        # Kolla om vi redan har en rad med denna starttid
-        existing_entry = get_audio_entry_by_time(mysql_start_time)
-        
-        db_id = None
-        
-        if existing_entry:
-            # --- SCENARIO: UPPDATERA (Behåll ID) ---
-            print(f"Duplicate found! Updating existing ID: {existing_entry['id']}")
-            
-            # Om filen vi laddar upp har ett annat namn eller sökväg än den gamla,
-            # städa bort den gamla fysiska filen från disken.
-            old_file_path = existing_entry['file_path']
-            if old_file_path and os.path.exists(old_file_path) and os.path.abspath(old_file_path) != os.path.abspath(final_path):
-                try:
-                    os.remove(old_file_path)
-                    print(f"Deleted old file: {old_file_path}")
-                except OSError as e:
-                    print(f"Warning: Could not delete old file {old_file_path}: {e}")
+        # Save to Database
+        success, db_result = insert_audio_data(metadata)
+        if not success:
+            raise Exception(db_result)
 
-            # Uppdatera raden i DB (behåller ID)
-            success, result_id = update_audio_data(existing_entry['id'], metadata)
-            if not success:
-                raise Exception(result_id) # result_id är felmeddelandet här om success är False
-            db_id = result_id
-
-        else:
-            # --- SCENARIO: NY INSÄTTNING (Nytt ID) ---
-            success, result_id = insert_audio_data(metadata)
-            if not success:
-                raise Exception(result_id)
-            db_id = result_id
-
-        # ---------------------------------------------------------
-        # 4. SAVE NEW: Rename temp to final
-        # ---------------------------------------------------------
-        
-        # Om final_path redan finns (t.ex. vi skriver över filen), ta bort den först
+        # Rename Temp file to Final filename
         if os.path.exists(final_path):
-            os.remove(final_path) 
-            
+            os.remove(final_path) # Safety check
         os.rename(temp_path, final_path)
 
-        return True, {"id": db_id, "filename": filename}
+        return True, {"id": db_result, "filename": filename}
 
     except Exception as e:
         # If anything fails, delete the temp file
