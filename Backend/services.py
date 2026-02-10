@@ -251,10 +251,6 @@ def handle_audio_upload_logic(file):
         # Prepare metadata for final save
         metadata['filepath'] = final_path
         metadata['filename'] = filename
-
-        # ---------------------------------------------------------
-        # 3. CHECK DUPLICATES: Update if exists, Insert if new
-        # ---------------------------------------------------------
         
         # Kolla om vi redan har en rad med denna starttid
         existing_entry = get_audio_entry_by_time(mysql_start_time)
@@ -288,10 +284,6 @@ def handle_audio_upload_logic(file):
                 raise Exception(result_id)
             db_id = result_id
 
-        # ---------------------------------------------------------
-        # 4. SAVE NEW: Rename temp to final
-        # ---------------------------------------------------------
-        
         # Om final_path redan finns (t.ex. vi skriver över filen), ta bort den först
         if os.path.exists(final_path):
             os.remove(final_path) 
