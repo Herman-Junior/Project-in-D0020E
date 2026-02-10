@@ -57,6 +57,11 @@ CREATE TABLE ALL_DATA (
         ON DELETE SET NULL
 );
 
+ALTER TABLE ALL_DATA DROP FOREIGN KEY fk_weather;
+ALTER TABLE ALL_DATA ADD CONSTRAINT fk_weather 
+    FOREIGN KEY (weather_data_id) REFERENCES WEATHER_DATA(weather_id) 
+    ON DELETE CASCADE;
+
 -- This creates a shortcut to see all deleted entries
 CREATE VIEW DELETED_WEATHER AS
 SELECT * FROM WEATHER_DATA 
