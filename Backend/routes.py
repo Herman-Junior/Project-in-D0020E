@@ -125,16 +125,25 @@ def batch_delete_api():
         print(f"Route error: {e}")
         return jsonify({'error': str(e)}), 500
 
+
 # --- Restore API --- #
 def restore_api():
-    from db import perform_batch_regret
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        ids = data.get('ids')
+        data_type = data.get('type')
+
+        from db import perform_batch_regret
     
-    # This uses your existing perform_batch_regret logic which handles 
-    # 'audio', 'sensor', and 'weather' types perfectly!
-    success = perform_batch_regret(data.get('ids'), data.get('type'))
+        success = perform_batch_regret(ids, data_type)
+        if success:
+            return jsonify({'success': success})
+        else:
+            return jsonify({'error': 'Database update failed'}), 400
+    except Exception as e:
+        print(f"Route error: {e}")
+        return jsonify({'error': str(e)}), 500
     
-    return jsonify({'success': success})
 
 def upload_csv_file():
     """
@@ -255,10 +264,23 @@ def trash_page():
     from db import view_deleted_audio_data, view_deleted_sensor_data, view_deleted_weather_data
     import os
 
-    audio=view_deleted_audio_data()
-    for rec in audio:
-        if rec.get('file_path'):
-            rec['filename'] = os.path.basename(rec['file_path'])
+    # 1. Hämta all data en gång
+    audio = view_deleted_audio_data()
+    weather = view_deleted_weather_data()
+    sensors = view_deleted_sensor_data()
 
-    return render_template('trashcan.html', audio=audio, sensors=view_deleted_sensor_data(), 
-    weather=view_deleted_weather_data())
+    # 2. Formatera all data (Datum och Filnamn)
+    for collection in [audio, weather, sensors]:
+        for item in collection:
+            # Fixa tidsstämplar för timern
+            if 'delete_at' in item and item['delete_at']:
+                item['delete_at'] = item['delete_at'].strftime('%Y-%m-%d %H:%M:%S')
+            if 'timestamp' in item and item['timestamp']:
+                item['timestamp'] = item['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Specifikt för ljudfiler: Extrahera filnamnet från sökvägen
+            if 'file_path' in item and item['file_path']:
+                item['filename'] = os.path.basename(item['file_path'])
+
+    # 3. Skicka den färdigformaterade datan till HTML-sidan
+    return render_template('trashcan.html', audio=audio, weather=weather, sensors=sensors)

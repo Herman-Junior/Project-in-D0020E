@@ -201,9 +201,14 @@ def perform_batch_delete(ids, data_type):
         else:
             return False
 
-        # Skapa rätt antal %s för din SQL-fråga (t.ex. %s, %s, %s)
+        
         placeholders = ', '.join(['%s'] * len(ids))
-        query = f"UPDATE {table} SET is_deleted = 1 WHERE {pk} IN ({placeholders})"
+        query = f"""
+            UPDATE {table}
+            SET is_deleted = 1,
+            delete_at = DATE_ADD(NOW(), INTERVAL 7 DAY)
+            WHERE {pk} IN ({placeholders})
+            """
         
         try:
             # Vi skickar med hela listan med ID:n som en tuple
@@ -249,7 +254,11 @@ def perform_batch_regret(ids, data_type):
 
         # Skapa rätt antal %s för din SQL-fråga (t.ex. %s, %s, %s)
         placeholders = ', '.join(['%s'] * len(ids))
-        query = f"UPDATE {table} SET is_deleted = 0 WHERE {pk} IN ({placeholders})"
+        query = f"""
+            UPDATE {table}
+            SET is_deleted = 0,
+            delete_at = NULL
+            WHERE {pk} IN ({placeholders})"""
         
         try:
             # Vi skickar med hela listan med ID:n som en tuple

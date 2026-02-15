@@ -10,8 +10,11 @@
     <div class="trash-list">
         {% if audio %}
             {% for item in audio %}
-            <div class="trash-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #444; gap: 500px; width: 100%; box-sizing: border-box;">
+            <div class="trash-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #444; gap: 130px; width: 100%; box-sizing: border-box;">
                 <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.filename }}</span>
+                <span class="timer-display" data-deadline="{{item.delete_at }}" style="color: #ffca28; font-family: monospace; font-size: 1 em; margin: 0 20px; min-width: 150px; text-align: center;">
+                    Läser in timer...
+                </span>
                 <button onclick="restoreItems(['{{ item.id }}'], 'audio')" class="insert-btn" style="background: #28a745; width: 120px; padding: 8px 15px; flex-shrink: 0; margin-left: 20px;">Restore</button>
             </div>
             {% endfor %}
@@ -26,9 +29,14 @@
     <div class="trash-list">
         {% if sensors %}
             {% for item in sensors %}
-            <div class="trash-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #444; gap: 500px; width: 100%; box-sizing: border-box;">
+            <div class="trash-item" style="display: flex; align-items: center; padding: 12px 20px; border-bottom: 1px solid #444; gap: 130px; width: 100%; box-sizing: border-box;">
                 <span style="white-space: nowrap;">{{ item.timestamp }} - Moisture: {{ item.moisture }}%</span>
-                <button onclick="restoreItems(['{{ item.sensor_id }}'], 'sensor')" class="insert-btn" style="background: #28a745; width: 120px; padding: 8px 15px; flex-shrink: 0; margin-left: 20px;">Restore</button>
+                <span class="timer-display" data-deadline="{{item.delete_at }}" style="color: #ffca28; font-family: monospace; font-size: 1 em; margin: 0 20px; min-width: 150px; text-align: center;">
+                    Läser in timer...
+                </span>
+
+                <button onclick="restoreItems(['{{ item.sensor_id }}'], 'sensor')" class="insert-btn" style="background: #28a745; width: 120px; padding: 6px 10px; font-size: 0.85em; flex-shrink: 0;">
+                Restore</button>
             </div>
             {% endfor %}
         {% else %}
@@ -42,8 +50,11 @@
     <div class="trash-list">
         {% if weather %}
             {% for item in weather %}
-            <div class="trash-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #444; gap: 500px; width: 100%; box-sizing: border-box;">
+            <div class="trash-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #444; gap: 130px; width: 100%; box-sizing: border-box;">
                 <span style="white-space: nowrap;">{{ item.timestamp }} - Temp: {{ item.out_temperature }}°C</span>
+                <span class="timer-display" data-deadline="{{item.delete_at }}" style="color: #ffca28; font-family: monospace; font-size: 1 em; margin: 0 20px; min-width: 150px; text-align: center;">
+                    Läser in timer...
+                </span>
                 <button onclick="restoreItems(['{{ item.weather_id }}'], 'weather')" class="insert-btn" style="background: #28a745; width: 120px; padding: 8px 15px; flex-shrink: 0; margin-left: 20px;">Restore</button>
             </div>
             {% endfor %}
@@ -73,5 +84,42 @@ async function restoreItems(ids, type) {
         alert("Network error: " + e.message);
     }
 }
+
+async function updateTimers() {
+    const timerElements = document.querySelectorAll('.timer-display');
+    console.log(`Hittade ${timerElements.length} timers att uppdatera`); // Kolla konsolen!
+
+    timerElements.forEach(el => {
+        const deadlineStr = el.getAttribute('data-deadline');
+        
+        // Om datum saknas eller är "None"
+        if (!deadlineStr || deadlineStr === "None" || deadlineStr === "") {
+            el.innerHTML = "No delete date";
+            return;
+        }
+
+        const deadline = new Date(deadlineStr).getTime();
+        const now = new Date().getTime();
+        const diff = deadline - now;
+
+        if (diff <= 0) {
+            el.innerHTML = "Will be deleted soon...";
+            return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        el.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s left`;
+    });
+}
+
+// Starta timern direkt och kör varje sekund
+updateTimers();
+setInterval(updateTimers, 1000);
+
+
 </script>
 {% endblock %}
