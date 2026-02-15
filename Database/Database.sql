@@ -13,7 +13,8 @@ CREATE TABLE AUDIO_RECORDING (
     start_time DATETIME NOT NULL,
     end_time DATETIME NOT NULL,
     file_path VARCHAR(255) NOT NULL UNIQUE, -- New code: file_path must be UNIQUE so we can 'REPLACE' if the file is re-uploaded
-    is_deleted TINYINT(1) DEFAULT 0 -- Order of operations
+    is_deleted TINYINT(1) DEFAULT 0, -- Order of operations
+    delete_at DATETIME DEFAULT NULL -- Timer for 14 days
 );
 
 -- Weather table
@@ -30,7 +31,8 @@ CREATE TABLE WEATHER_DATA (
     wind_direction VARCHAR(10),
     daily_rain DOUBLE,
     rain_rate DOUBLE,
-    is_deleted TINYINT(1) DEFAULT 0 -- Order of operations
+    is_deleted TINYINT(1) DEFAULT 0, -- Order of operations
+    delete_at DATETIME DEFAULT NULL -- Timer for 14 days
 );
 
 CREATE TABLE SENSOR_DATA (
@@ -39,7 +41,8 @@ CREATE TABLE SENSOR_DATA (
     date DATE,
     time TIME,
     moisture DOUBLE,
-    is_deleted TINYINT(1) DEFAULT 0 -- Order of operations
+    is_deleted TINYINT(1) DEFAULT 0, -- Order of operations
+    delete_at DATETIME DEFAULT NULL -- Timer for 14 days
 );
 
 CREATE TABLE ALL_DATA (
@@ -110,5 +113,27 @@ FROM AUDIO_RECORDING
 WHERE is_deleted = 0 
 ORDER BY start_time DESC;
 
-SELECT * FROM AUDIO_RECORDING;
-SELECT * FROM WEATHER_DB.AUDIO_RECORDING;
+DELIMITER //
+CREATE PROCEDURE DELETE_EXPIRED_DATA()
+BEGIN
+
+    DELETE FROM audio_recording
+    WHERE is_deleted = 1 
+    AND delete_at <= NOW();
+
+    DELETE FROM weather_data
+    WHERE is_deleted = 1 
+    AND delete_at <= NOW();
+
+    DELETE FROM sensor_data
+    WHERE is_deleted = 1 
+    AND delete_at <= NOW();
+END //
+DELIMITER ;
+DROP EVENT cleanup_crew
+
+CREATE EVENT cleanup_crew
+ON SCHEDULE EVERY 1 HOUR
+STARTS (CURRENT_DATE + INTERVAL HOUR(NOW()) + 1 HOUR)
+DO
+    CALL DELETE_EXPIRED_DATA();
