@@ -95,6 +95,8 @@ def get_combined_data(start_date=None, end_date=None, start_time=None, end_time=
                 COALESCE(W.timestamp, S.timestamp) AS sort_ts
             FROM WEATHER_DATA W
             LEFT JOIN SENSOR_DATA S ON W.timestamp = S.timestamp
+            WHERE (W.is_deleted = 0 OR W.is_deleted IS NULL)
+                AND (S.is_deleted = 0 OR S.is_deleted IS NULL)
             
             UNION
             
@@ -107,6 +109,8 @@ def get_combined_data(start_date=None, end_date=None, start_time=None, end_time=
                 COALESCE(W.timestamp, S.timestamp) AS sort_ts
             FROM WEATHER_DATA W
             RIGHT JOIN SENSOR_DATA S ON W.timestamp = S.timestamp
+            WHERE (W.is_deleted = 0 OR W.is_deleted IS NULL)
+                AND (S.is_deleted = 0 OR S.is_deleted IS NULL)
         """
 
         # Build the wrapper query for filtering and sorting
