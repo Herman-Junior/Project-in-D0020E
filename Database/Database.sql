@@ -80,9 +80,9 @@ SELECT * FROM AUDIO_RECORDING
 WHERE is_deleted = 1;
 
 
+CREATE OR REPLACE VIEW V_ACTIVE_WEATHER_SENSORS AS
 SELECT
     A.timestamp,
-
     W.in_temperature,
     W.out_temperature,
     W.in_humidity,
@@ -91,7 +91,6 @@ SELECT
     W.wind_direction,
     W.daily_rain,
     W.rain_rate,
-
     S.moisture
 FROM
     ALL_DATA A
