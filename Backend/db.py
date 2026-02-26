@@ -3,7 +3,7 @@ import pymysql
 import pymysql.cursors
 from contextlib import contextmanager
 from config import *
-from utils import format_timestamp
+from utils import format_timestamp, timestamp_filter
 
 # ====================
 # CONNECTION HANDLING
@@ -148,13 +148,25 @@ def insert_audio_data(audio_metadata):
             print(f"Audio Data Insertion Error: {e}")
             return False, f"Insertion failed: {e}"
 
-def get_latest_audio_data(limit=10):
+def get_latest_audio_data(start_date=None, end_date=None, start_time=None, end_time=None, limit=100):
     with db_session(dict_cursor=True) as conn:
-        if not conn: return []
+        if not conn: 
+            return []
         cursor = conn.cursor()
-        query = "SELECT * FROM AUDIO_RECORDING ORDER BY start_time DESC LIMIT %s"
-        cursor.execute(query, (limit,))
+        query = "SELECT id, date, start_time, file_path FROM AUDIO_RECORDING WHERE is_deleted = 0"
+
+        conditions, params = timestamp_filter(start_date, end_date, start_time, end_time, 'start_time')
+
+        if conditions:
+            query += " AND " + " AND ".join(conditions)
+        
+        query += f" ORDER BY start_time DESC LIMIT %s"
+        params.append(limit)
+
+        cursor.execute(query, params)
         return cursor.fetchall()
+        
+
     
 def delete_audio_by_start_time(formatted_start_time):
     """

@@ -71,9 +71,26 @@ def get_audio_api():
     utility parser and the frontend formatter.
     """
     try:
+        # Get parameters from the URL query string
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        start_time = request.args.get('start_time')
+        end_time = request.args.get('end_time')
+
         # get_latest_audio_data should return a list of dictionaries 
         # where 'date' is a datetime.date object.
-        data = get_latest_audio_data(limit=10) 
+        data = get_latest_audio_data(
+            start_date=start_date, 
+            end_date=end_date, 
+            start_time=start_time, 
+            end_time=end_time, 
+            limit=100
+        )
+
+        # Clean up for frontend
+        for record in data:
+            if record.get('file_path'):
+                record['filename'] = os.path.basename(record['file_path'])
         
         # This one line replaces all your manual strftime loops!
         return jsonify(format_for_frontend(data)), 200
@@ -218,42 +235,39 @@ def query_page():
 def audio_page():
     """
     Logic for the audio management page.
-    Fetches all recordings to display them in the list.
+    Modified to handle initial filters if provided in the URL.
     """
-    conn = None
-    recordings = []
+    # Grab filters from the URL (if they exist)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time')
+    end_time = request.args.get('end_time')
+
     try:
-        # Use dict_cursor=True so we can access columns by name in the HTML
-        conn = get_db_connection(dict_cursor=True)
-        if not conn:
-            return render_template('audio.html', recordings=[])
+        # Use the exact same function your API uses!
+        recordings = get_latest_audio_data(
+            start_date=start_date, 
+            end_date=end_date, 
+            start_time=start_time, 
+            end_time=end_time, 
+            limit=100
+        )
 
-        cursor = conn.cursor()
-        
-        # Query matching your SQL schema
-        # We fetch start_time to show the user when it was recorded
-        query = "SELECT id, date, start_time, file_path FROM AUDIO_RECORDING WHERE is_deleted = 0 ORDER BY start_time DESC"
-
-        cursor.execute(query)
-        recordings = cursor.fetchall()
-
-        # Clean up data for the HTML template
+        # Clean up filenames and format dates
         for record in recordings:
-            # Extract filename from path (e.g., /path/to/file.wav -> file.wav)
-            if record['file_path']:
+            if record.get('file_path'):
                 record['filename'] = os.path.basename(record['file_path'])
             
-            # Format date and time objects to strings for clean display
-            if record['date']:
+            # Use your helper or manual format to ensure 
+            # the HTML template can read them
+            if hasattr(record['date'], 'strftime'):
                 record['date'] = record['date'].strftime('%Y-%m-%d')
-            if record['start_time']:
+            if hasattr(record['start_time'], 'strftime'):
                 record['start_time'] = record['start_time'].strftime('%H:%M:%S')
 
     except Exception as e:
-        print(f"Error in audio_page logic: {e}")
-    finally:
-        if conn:
-            conn.close()
+        print(f"Error in audio_page: {e}")
+        recordings = []
 
     return render_template('audio.html', recordings=recordings)
 

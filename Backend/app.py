@@ -4,7 +4,7 @@ from flask import Flask
 import os
 from config import *
 # Import the route handlers (index, get_sensor_api, and get_weather_api)
-from routes import(index, get_sensor_api, get_weather_api, get_combined_api, 
+from routes import(get_audio_api, index, get_sensor_api, get_weather_api, get_combined_api, 
                    upload_csv_file, upload_audio_metadata, insert_page, query_page, 
                    audio_page, trash_page, get_audio_environmental_api, audio_details_page, batch_delete_api, restore_api)
 
@@ -25,6 +25,7 @@ app.add_url_rule('/api/v1/sensors', 'get_sensor_api', get_sensor_api)
 app.add_url_rule('/api/v1/weather', 'get_weather_api', get_weather_api) 
 app.add_url_rule('/api/v1/combined', 'get_combined_api', get_combined_api) #--- new ---
 app.add_url_rule('/api/v1/upload', 'upload_csv_file', upload_csv_file, methods=['POST'])
+app.add_url_rule('/api/v1/audio', 'get_audio_api', get_audio_api)
 app.add_url_rule('/api/v1/audio/upload', 'upload_audio_metadata', 
                 upload_audio_metadata, methods=['POST'])
 app.add_url_rule('/api/v1/audio/environmental', 'get_audio_with_environmental_api', 

@@ -16,7 +16,35 @@
 
 <div class="upload-area-container">
 
-    <div class="audio-list-container">
+    <div class="query-layout-wrapper container" style="margin-bottom: 20px;">
+        <div class="left-controls">
+            <div id="filter-options" style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <div class="control-group">
+                    <label class="control-label">Start Date</label>
+                    <input type="date" id="start-date" class="control-input">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">End Date</label>
+                    <input type="date" id="end-date" class="control-input">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Start Time</label>
+                    <input type="time" id="start-time" class="control-input" step="1">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">End Time</label>
+                    <input type="time" id="end-time" class="control-input" step="1">
+                </div>
+            </div>
+        </div>
+
+        <div class="right-controls" style="display: flex; align-items: flex-end;">
+            <button id="load-audio-btn" class="insert-btn">Load Recordings</button>
+        </div>
+    </div>
+
+
+    <div class="audio-list-container" id="audio-results-container">
         {% if recordings %}
             {% for record in recordings %}
             <div class="container upload-box audio-item" 
