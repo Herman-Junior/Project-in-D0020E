@@ -4,7 +4,7 @@ from flask import Flask
 import os
 from config import *
 # Import the route handlers (index, get_sensor_api, and get_weather_api)
-from routes import(get_audio_api, index, get_sensor_api, get_weather_api, get_combined_api, 
+from routes import(filter_trash_api, get_audio_api, index, get_sensor_api, get_weather_api, get_combined_api, 
                    upload_csv_file, upload_audio_metadata, insert_page, query_page, 
                    audio_page, trash_page, get_audio_environmental_api, audio_details_page, batch_delete_api, restore_api)
 
@@ -19,6 +19,7 @@ app.add_url_rule('/query', 'query_page', query_page)
 app.add_url_rule('/audio', 'audio_page', audio_page)
 app.add_url_rule('/audio/details', 'audio_details_page', audio_details_page)
 app.add_url_rule('/trash', 'trash_page', trash_page)
+app.add_url_rule('/api/v1/trash/filter', view_func=filter_trash_api, methods=['GET'])
 
 # Register the distinct API endpoints
 app.add_url_rule('/api/v1/sensors', 'get_sensor_api', get_sensor_api)

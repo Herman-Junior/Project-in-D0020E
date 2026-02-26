@@ -1,5 +1,8 @@
 # backend/routes.py
 from flask import jsonify, render_template, request
+from db import view_deleted_audio_data, view_deleted_sensor_data, view_deleted_weather_data
+from datetime import timedelta, date, datetime
+
 import os
 
 # Internal project imports
@@ -142,6 +145,43 @@ def batch_delete_api():
         print(f"Route error: {e}")
         return jsonify({'error': str(e)}), 500
 
+def filter_trash_api():
+    # Capture the inputs from the browser
+    s_date = request.args.get('start_date')
+    e_date = request.args.get('end_date')
+    s_time = request.args.get('start_time')
+    e_time = request.args.get('end_time')
+
+    try:
+        #Query the database
+        audio = view_deleted_audio_data(s_date, e_date, s_time, e_time)
+        sensors = view_deleted_sensor_data(s_date, e_date, s_time, e_time)
+        weather = view_deleted_weather_data(s_date, e_date, s_time, e_time)
+
+        def format_results(results):
+            for row in results:
+                for key, val in row.items():
+                    # Handle Date/Datetime objects
+                    if isinstance(val, (datetime, date)):
+                        row[key] = val.strftime('%Y-%m-%d %H:%M:%S')
+                    # Handle Timedelta (Time columns)
+                    elif isinstance(val, timedelta):
+                        row[key] = str(val)
+                
+                # Special handling for audio filename
+                if 'file_path' in row and row['file_path']:
+                    row['filename'] = os.path.basename(row['file_path'])
+            return results
+
+        return jsonify({
+            "audio": format_results(audio),
+            "sensors": format_results(sensors),
+            "weather": format_results(weather)
+        })
+
+    except Exception as e:
+        print(f"Filter Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 # --- Restore API --- #
 def restore_api():
@@ -275,7 +315,6 @@ def audio_details_page():
     return render_template('audio_details.html')
 
 def trash_page():
-    from db import view_deleted_audio_data, view_deleted_sensor_data, view_deleted_weather_data
     import os
 
     # 1. Hämta all data en gång

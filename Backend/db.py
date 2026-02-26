@@ -295,26 +295,41 @@ def regret_audio_recording_deletion(id):
 # Vew deleted data
 # =================
 
-def view_deleted_weather_data():
+def view_deleted_weather_data(start_date=None, end_date=None, start_time=None, end_time=None):
     with db_session(dict_cursor=True) as conn:
-        if not conn: return []
-        cursor=conn.cursor()
-        query="SELECT * FROM DELETED_WEATHER"
-        cursor.execute(query)
-        return cursor.fetchall()
+            if not conn: return []
+            cursor = conn.cursor()
+            # Use the View or Table name for deleted audio
+            query = "SELECT * FROM WEATHER_DATA WHERE is_deleted = 1"
+            
+            conditions, params = timestamp_filter(start_date, end_date, start_time, end_time, 'timestamp')
+            if conditions:
+                query += " AND " + " AND ".join(conditions)
+            
+            cursor.execute(query, params)
+            return cursor.fetchall()
     
-def view_deleted_sensor_data():
+def view_deleted_sensor_data(start_date=None, end_date=None, start_time=None, end_time=None):
     with db_session(dict_cursor=True) as conn:
-        if not conn: return []
-        cursor=conn.cursor()
-        query="SELECT * FROM DELETED_SENSOR"
-        cursor.execute(query)
-        return cursor.fetchall()
+            if not conn: return []
+            cursor = conn.cursor()
+            query = "SELECT * FROM SENSOR_DATA WHERE is_deleted = 1"
+            
+            conditions, params = timestamp_filter(start_date, end_date, start_time, end_time, 'timestamp')
+            if conditions:
+                query += " AND " + " AND ".join(conditions)
+            
+            cursor.execute(query, params)
+            return cursor.fetchall()
     
-def view_deleted_audio_data():
+def view_deleted_audio_data(start_date=None, end_date=None, start_time=None, end_time=None):
     with db_session(dict_cursor=True) as conn:
-        if not conn: return []
-        cursor=conn.cursor()
-        query="SELECT * FROM DELETED_AUDIO"
-        cursor.execute(query)
-        return cursor.fetchall()
+            if not conn: return []
+            cursor = conn.cursor()
+            query="SELECT * FROM AUDIO_RECORDING WHERE is_deleted = 1"
+            conditions, params = timestamp_filter(start_date, end_date, start_time, end_time, 'start_time')
+            if conditions:
+                query += " AND " + " AND ".join(conditions)
+            
+            cursor.execute(query, params)
+            return cursor.fetchall()

@@ -22,24 +22,38 @@ def timestamp_filter(start_date, end_date, start_time, end_time, timestamp_col='
     conditions = []
     params = []
 
-    # Helper to ensure time is HH:MM:SS
     def fix_time(t, default):
         if not t or not t.strip(): return default
-        t = t.strip().rstrip(':') # Remove any trailing colons
-        if len(t) == 5: return f"{t}:00" if default == "00:00:00" else f"{t}:59"
+        t = t.strip().rstrip(':') 
+        # If user typed HH:MM (length 5), add the appropriate seconds
+        if len(t) == 5: 
+            return f"{t}:00" if default == "00:00:00" else f"{t}:59"
+        # If user typed HH:MM:SS, return it exactly as is
         return t
 
-    # 1. Start Filter
+    # --- UPDATED HELPER: Handles partial year inputs ---
+    def fix_date(d, is_end=False):
+        if not d or not d.strip(): return None
+        d = d.strip()
+        # If only a year is typed (4 digits), turn it into a full date
+        if len(d) == 4 and d.isdigit():
+            return f"{d}-12-31" if is_end else f"{d}-01-01"
+        return d
+
+    # Apply the date fixing logic
+    start_date = fix_date(start_date, is_end=False)
+    end_date = fix_date(end_date, is_end=True)
+
+    # Start Filter
     if start_date:
         full_start = f"{start_date} {fix_time(start_time, '00:00:00')}"
         conditions.append(f"{timestamp_col} >= %s")
         params.append(full_start)
     elif start_time and start_time.strip():
-        # If ONLY time is provided, filter by time of day
         conditions.append(f"TIME({timestamp_col}) >= %s")
         params.append(fix_time(start_time, "00:00:00"))
 
-    # 2. End Filter
+    # End Filter
     if end_date:
         full_end = f"{end_date} {fix_time(end_time, '23:59:59')}"
         conditions.append(f"{timestamp_col} <= %s")
@@ -48,7 +62,7 @@ def timestamp_filter(start_date, end_date, start_time, end_time, timestamp_col='
         conditions.append(f"TIME({timestamp_col}) <= %s")
         params.append(fix_time(end_time, "23:59:59"))
 
-    return conditions, params   
+    return conditions, params
 
 
 def format_for_frontend(data):
