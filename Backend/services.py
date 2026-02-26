@@ -246,6 +246,14 @@ def handle_audio_upload_logic(file):
         if not metadata or 'start_timestamp' not in metadata:
             raise Exception("Could not read date from file.")
 
+        # do not allow files < 1 minute
+        if metadata.get('duration') and metadata['duration'] < 60:
+            os.remove(temp_path)
+            return False, f"File too short ({int(metadata['duration'])} seconds). Minimum duration is 1 minute."
+
+
+
+
         # Convert Unix timestamp to MySQL format (YYYY-MM-DD HH:MM:SS)
         formatted_time = format_timestamp(metadata['start_timestamp'])
         mysql_start_time = formatted_time['timestamp']

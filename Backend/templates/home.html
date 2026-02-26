@@ -4,6 +4,51 @@
 
 {% block content %}
     <h1>Database Management System</h1>
-    <p>This application allows you to manage sensor, weather, and audio data for your D0020E project.</p>
-    
+    <p>This application allows you to manage sensor, weather, and audio data for your LTU lawn mowers.</p>
+
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 30px; max-width: 700px;">
+
+        <div class="container upload-box" style="display: flex; align-items: flex-start; gap: 20px; padding: 24px;">
+            <div style="flex-shrink: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="#e3e3e3">
+                    <path d="M440-200h80v-167l64 64 56-57-160-160-160 160 57 56 63-63v167ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/>
+                </svg>
+            </div>
+            <div>
+                <h2 style="margin: 0 0 8px 0; font-size: 1.1em;">1. Insert Data</h2>
+                <p style="margin: 0; color: var(--secondary-text-clr); line-height: 1.6;">
+                    Upload CSV files containing sensor or weather data, or add audio recordings directly from the Insert page. Files are processed and stored automatically.
+                </p>
+            </div>
+        </div>
+
+        <div class="container upload-box" style="display: flex; align-items: flex-start; gap: 20px; padding: 24px;">
+            <div style="flex-shrink: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="#e3e3e3">
+                    <path d="M472-120q-73-1-137.5-13.5t-112-34Q175-189 147.5-218T120-280q0 33 27.5 62t75 50.5q47.5 21.5 112 34T472-120Zm-71-204q-30-3-58-8t-53.5-12q-25.5-7-48-15.5T200-379q19 11 41.5 19.5t48 15.5q25.5 7 53.5 12t58 8Zm79-275q86 0 177.5-26T760-679q-11-29-100.5-55T480-760q-91 0-178.5 25.5T200-679q15 29 104.5 54.5T480-599Zm-61 396q10 23 23 44t30 39q-73-1-137.5-13.5t-112-34Q175-189 147.5-218T120-280v-400q0-33 28.5-62t77.5-51q49-22 114.5-34.5T480-840q74 0 139.5 12.5T734-793q49 22 77.5 51t28.5 62q0 33-28.5 62T734-567q-49 22-114.5 34.5T480-520q-85 0-157-15t-123-44v101q40 37 100 54t121 22q-8 15-13 34.5t-7 43.5q-60-7-111.5-20T200-379v99q14 25 77 47t142 30ZM864-40 756-148q-22 13-46 20.5t-50 7.5q-75 0-127.5-52.5T480-300q0-75 52.5-127.5T660-480q75 0 127.5 52.5T840-300q0 26-7.5 50T812-204L920-96l-56 56ZM660-200q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Z"/>
+                </svg>
+            </div>
+            <div>
+                <h2 style="margin: 0 0 8px 0; font-size: 1.1em;">2. Lookup & Download Data</h2>
+                <p style="margin: 0; color: var(--secondary-text-clr); line-height: 1.6;">
+                    Browse and filter sensor, weather, and combined data by date and time on the Lookup page. Select specific rows to download, or download everything matching your current filters as a CSV file.
+                </p>
+            </div>
+        </div>
+
+        <div class="container upload-box" style="display: flex; align-items: flex-start; gap: 20px; padding: 24px;">
+            <div style="flex-shrink: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="#e3e3e3">
+                    <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/>
+                </svg>
+            </div>
+            <div>
+                <h2 style="margin: 0 0 8px 0; font-size: 1.1em;">3. Safe Deletion</h2>
+                <p style="margin: 0; color: var(--secondary-text-clr); line-height: 1.6;">
+                    Deleting a file gives you the option to restore it for up to two weeks. Deleted items are held in the Trash Can where you can review and recover them before they are permanently removed.
+                </p>
+            </div>
+        </div>
+
+    </div>
 {% endblock %}

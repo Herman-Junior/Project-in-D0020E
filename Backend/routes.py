@@ -1,6 +1,12 @@
 # backend/routes.py
 from flask import jsonify, render_template, request
 import os
+import csv
+import io
+from flask import Response
+from datetime import datetime
+
+
 
 # Internal project imports
 from db import (perform_batch_delete, delete_weather_data, delete_audio_recording, get_db_connection, get_latest_audio_data)
@@ -298,3 +304,47 @@ def trash_page():
 
     # 3. Skicka den färdigformaterade datan till HTML-sidan
     return render_template('trashcan.html', audio=audio, weather=weather, sensors=sensors)
+
+
+
+# function for downloading data as a csv file
+
+def export_csv_api():
+    """
+    GET /api/v1/export?type=sensor|weather|combined&start_date=...&end_date=...
+    Returns a CSV file download of the requested data.
+    """
+    data_type   = request.args.get('type', 'combined')
+    start_date  = request.args.get('start_date')
+    end_date    = request.args.get('end_date')
+    start_time  = request.args.get('start_time')
+    end_time    = request.args.get('end_time')
+
+    # --- Fetch data using existing service functions ---
+    if data_type == 'sensor':
+        data = get_latest_sensor_data(start_date, end_date, start_time, end_time, limit=100000)
+    elif data_type == 'weather':
+        data = get_latest_weather_data(start_date, end_date, start_time, end_time, limit=100000)
+    else:
+        data = get_combined_data(start_date, end_date, start_time, end_time, limit=100000)
+
+    # --- Error check ---
+    if data and 'error' in data[0]:
+        return jsonify({'error': data[0]['error']}), 500
+
+    if not data:
+        return jsonify({'error': 'No data found for the given filters'}), 404
+
+    # --- Build CSV in memory ---
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=data[0].keys())
+    writer.writeheader()
+    writer.writerows(data)
+
+    # --- Stream as a file download ---
+    filename = f"{data_type}_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )

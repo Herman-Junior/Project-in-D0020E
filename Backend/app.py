@@ -6,7 +6,7 @@ from config import *
 # Import the route handlers (index, get_sensor_api, and get_weather_api)
 from routes import(get_audio_api, index, get_sensor_api, get_weather_api, get_combined_api, 
                    upload_csv_file, upload_audio_metadata, insert_page, query_page, 
-                   audio_page, trash_page, get_audio_environmental_api, audio_details_page, batch_delete_api, restore_api)
+                   audio_page, trash_page, get_audio_environmental_api, audio_details_page, batch_delete_api, restore_api, export_csv_api)
 
 app = Flask(__name__, 
             template_folder=TEMPLATE_FOLDER_PATH,
@@ -35,7 +35,7 @@ app.add_url_rule('/api/v1/delete', 'batch_delete_api', batch_delete_api, methods
 
 app.add_url_rule('/api/v1/restore', 'restore_api', restore_api, methods=['POST'])
 
-
+app.add_url_rule('/api/v1/export', 'export_csv_api', export_csv_api)
 
 if __name__ == '__main__':
     # Run the Flask application

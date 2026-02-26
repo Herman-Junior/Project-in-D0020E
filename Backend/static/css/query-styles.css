@@ -109,6 +109,18 @@
     border: 1px solid var(--line-clr);
 }
 
+#download-csv-btn {
+    width: fit-content;
+    min-width: 150px;
+    padding: 0 25px;
+    height: 42px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    background-color: var(--accent-clr);
+}
+
+
+
 #toggle-filters-btn:hover {
     background-color: #383b52; /* Slightly lighter on hover */
 }
@@ -125,7 +137,19 @@
 
 .secondary-btn {
     background-color: #444;
+
 }
+
+
+
+
+#download-csv-btn:hover {
+    background-color: #7b80ff;
+}
+
+
+
+
 
 /* ------------------------------------------- */
 /* --- 4. FILTER OPTIONS (EXPANDABLE) ---      */

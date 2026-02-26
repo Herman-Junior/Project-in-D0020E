@@ -193,4 +193,70 @@ toggleBtn.addEventListener('click', () => {
         // Reset action menu on new render
         updateActionMenu();
     }
+
+    // --- CSV DOWNLOAD ---
+    const downloadButton = document.getElementById('download-csv-btn');
+    if (downloadButton) {
+        downloadButton.addEventListener('click', downloadCSV);
+    }
+
+    function downloadCSV() {
+        const selectedData = dataSelect.value;
+        const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+
+        if (checkedBoxes.length > 0) {
+            // Selected rows only: build CSV directly from the table DOM
+            const table = document.querySelector('.data-table');
+            if (!table) return;
+
+            const headerCells = table.querySelectorAll('thead th');
+            const headers = Array.from(headerCells)
+                .map(th => th.textContent.trim())
+                .filter(h => h !== ''); // skip checkbox column
+
+            const rows = [];
+            checkedBoxes.forEach(cb => {
+                const row = cb.closest('tr');
+                const cells = Array.from(row.querySelectorAll('td'))
+                    .filter(td => !td.classList.contains('checkbox-col'));
+                rows.push(cells.map(td => `"${td.textContent.trim()}"`));
+            });
+
+            const csvContent = [
+                headers.map(h => `"${h}"`).join(','),
+                ...rows.map(r => r.join(','))
+            ].join('\n');
+
+            triggerDownload(csvContent, `${selectedData}_selected_${csvTimestamp()}.csv`);
+
+        } else {
+            // Nothing selected: download everything via API using current filters
+            const startDate = startDateInput ? startDateInput.value : '';
+            const endDate   = endDateInput   ? endDateInput.value   : '';
+            const startTime = startTimeInput ? startTimeInput.value : '';
+            const endTime   = endTimeInput   ? endTimeInput.value   : '';
+
+            const params = new URLSearchParams({ type: selectedData });
+            if (startDate) params.append('start_date', startDate);
+            if (startTime) params.append('start_time', startTime);
+            if (endDate)   params.append('end_date',   endDate);
+            if (endTime)   params.append('end_time',   endTime);
+
+            window.location.href = `/api/v1/export?${params.toString()}`;
+        }
+    }
+
+    function triggerDownload(csvContent, filename) {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function csvTimestamp() {
+        return new Date().toISOString().slice(0, 19).replace(/[T:-]/g, '');
+    }
 });
