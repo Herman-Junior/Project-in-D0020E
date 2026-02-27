@@ -204,64 +204,94 @@ def restore_api():
 
 def upload_csv_file():
     """
-    Handles CSV uploads by passing the stream directly to the processor.
+    Handles multiple CSV uploads and returns a total count.
     """
-    file = request.files.get('file')
-    if not file:
-        return jsonify({"error": "No file"}), 400
+    files = request.files.getlist('files[]')
+    if not files:
+        return jsonify({"error": "No files provided"}), 400
     
-    result = process_csv_file(file) 
-    if result.get('success_count', 0) == 0 and result.get('fail_count', 0) > 0:
-        return jsonify(result), 400
+    total_success = 0
+    total_fail = 0
+    
+    for file in files:
+        if file.filename == '': continue
+        result = process_csv_file(file)
+        total_success += result.get('success_count', 0)
+        total_fail += result.get('fail_count', 0)
         
-    return jsonify(result), 200 # Returns 200 if at least some rows succeeded
+    return jsonify({
+        "success_count": total_success,
+        "fail_count": total_fail,
+        "status": "success"
+    }), 200
+        
 
 def upload_audio_metadata():
     """
-    Saves file and extracts metadata
+    API endpoint to handle multiple audio uploads.
     """
-    if 'file' not in request.files:
-        return jsonify({"error": "No file"}), 400
+    files = request.files.getlist('files[]')
     
-    file = request.files['file']
-    success, result = handle_audio_upload_logic(file)
+    if not files or files[0].filename == '':
+        return jsonify({"status": "error", "message": "No files selected"}), 400
     
-    if not success:
-        return jsonify({"error": result}), 500
-    
+    results = []
+    errors = []
+
+    for file in files:
+        if not is_allowed_file(file.filename):
+            errors.append(f"Invalid type: {file.filename}")
+            continue
+
+        success, result = handle_audio_upload_logic(file)
+        if success:
+            results.append(result['id'])
+        else:
+            errors.append(f"Failed {file.filename}: {result}")
+
     return jsonify({
-        "status": "success",
-        "audio_id": result['id'],
-        "message": "Metadata extracted, file saved"
-    })
+        "status": "success" if results else "error", 
+        "audio_count": len(results),
+        "error_count": len(errors),
+        "audio_ids": results,
+        "errors": errors
+    }), 201
 
 def upload_audio_api(): 
     """
-    API endpoint to handle audio uploads.
+    Consolidated API endpoint to handle multiple audio uploads.
     """
-    if 'file' not in request.files:
-        return jsonify({"status": "error", "message": "No file part in the request"}), 400
+    # Use getlist to catch all files from 'files[]'
+    files = request.files.getlist('files[]')
     
-    file = request.files['file']
+    if not files or (len(files) == 1 and files[0].filename == ''):
+        return jsonify({"status": "error", "message": "No files selected"}), 400
     
-    if file.filename == '':
-        return jsonify({"status": "error", "message": "No file selected"}), 400
-    
-    if not is_allowed_file(file.filename):
-        return jsonify({"status": "error", "message": "Invalid file type."}), 400
+    results = []
+    errors = []
 
-    success, result = handle_audio_upload_logic(file)
-    
-    if not success:
-        return jsonify({"status": "error", "message": result}), 500
+    for file in files:
+        if not is_allowed_file(file.filename):
+            errors.append(f"Invalid type: {file.filename}")
+            continue
 
+        # Process each file
+        success, result = handle_audio_upload_logic(file)
+        if success:
+            results.append(result['id'])
+        else:
+            errors.append(f"Failed {file.filename}: {result}")
+
+    # Return 'audio_count' so the frontend shows the correct number
     return jsonify({
-        "status": "success", 
-        "message": f"File '{result['filename']}' successfully processed.",
-        "id": result['id']
+        "status": "success" if results else "error", 
+        "audio_count": len(results),
+        "audio_id": results[0] if len(results) == 1 else None, # Add this line!
+        "message": f"Processed {len(results)} files.",
+        "audio_ids": results,
+        "errors": errors
     }), 201
 
-    # Serves the static client-side HTML file
 
 def index():    
     return render_template('home.html')
