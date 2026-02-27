@@ -3,8 +3,8 @@ import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from config import AUDIO_DIRECTORY
-from db import db_session, insert_audio_data, delete_audio_by_start_time
-from utils import extract_audio_metadata, format_for_frontend, format_timestamp, timestamp_filter
+from db import db_session, insert_audio_data, delete_audio_by_start_time, find_overlapping_recordings, update_audio_end_time,check_overlap_by_filename_start
+from utils import extract_audio_metadata, format_for_frontend, format_timestamp, timestamp_filter,  parse_timestamp_from_filename
 
 # =========
 # DATA GET
@@ -229,60 +229,162 @@ def get_audio_environmental_data_logic(audio_id):
             "weather_data": format_for_frontend(weather)
         }
 
-def handle_audio_upload_logic(file):
+
+
+#==================
+# AUDIO OVERLAPP
+#==================
+
+def check_audio_overlap_logic(filename):
+    MYSQL_FMT = "%Y-%m-%d %H:%M:%S"
+
+    start_dt = parse_timestamp_from_filename(filename)
+    if not start_dt:
+        # Filename doesn't match the expected pattern -- skip check
+        return {"has_overlap": False, "conflicts": []}
+
+    rows = check_overlap_by_filename_start(start_dt.strftime(MYSQL_FMT))
+
+    conflicts = []
+    for r in rows:
+        conflicts.append({
+            "id":         r['id'],
+            "start_time": r['start_time'].strftime(MYSQL_FMT) if hasattr(r['start_time'], 'strftime') else str(r['start_time']),
+            "end_time":   r['end_time'].strftime(MYSQL_FMT)   if hasattr(r['end_time'],   'strftime') else str(r['end_time']),
+            "filename":   os.path.basename(r['file_path']) if r['file_path'] else "unknown",
+        })
+
+    return {
+        "has_overlap": len(conflicts) > 0,
+        "conflicts":   conflicts,
+    }
+
+def _resolve_overlaps(new_start_dt, new_end_dt, action):
+    MYSQL_FMT = "%Y-%m-%d %H:%M:%S"
+
+    overlapping = find_overlapping_recordings(
+        new_start_dt.strftime(MYSQL_FMT),
+        new_end_dt.strftime(MYSQL_FMT),
+    )
+    resolutions = []
+
+    for rec in overlapping:
+        ex_id    = rec['id']
+        ex_start = rec['start_time']   # datetime, from pymysql DictCursor
+        ex_path  = rec['file_path']
+
+        if ex_start <= new_start_dt:
+            # Existing file started before the new one -> it is the "earlier" file
+            earlier_label = "existing"
+            trim_point    = new_start_dt
+        else:
+            # New file started before the existing one -> new file is "earlier"
+            earlier_label = "new"
+            trim_point    = ex_start
+            new_end_dt    = min(new_end_dt, trim_point)
+
+        if action == "overwrite":
+            if earlier_label == "existing":
+                # Delete the physical file
+                if ex_path and os.path.exists(ex_path):
+                    os.remove(ex_path)
+                    print(f"Overlap overwrite: deleted '{ex_path}'")
+                # Hard-delete the DB row
+                with db_session() as conn:
+                    if conn:
+                        cur = conn.cursor()
+                        cur.execute("DELETE FROM AUDIO_RECORDING WHERE id = %s", (ex_id,))
+                        conn.commit()
+                detail = f"Deleted existing recording #{ex_id} from DB and disk."
+            else:
+                detail = "New file is the earlier one; its end_time will be clamped in DB."
+        else:
+            # trim -- DB only, zero file I/O
+            if earlier_label == "existing":
+                update_audio_end_time(ex_id, trim_point.strftime(MYSQL_FMT))
+                detail = (
+                    f"Existing recording #{ex_id} end_time updated to "
+                    f"{trim_point.strftime('%H:%M:%S')} in DB."
+                )
+            else:
+                detail = (
+                    f"New file end_time clamped to "
+                    f"{trim_point.strftime('%H:%M:%S')} in DB."
+                )
+
+        resolutions.append({
+            "conflicting_id": ex_id,
+            "earlier":        earlier_label,
+            "action":         action,
+            "detail":         detail,
+        })
+        print(f"Overlap resolved: {detail}")
+
+    return resolutions, new_end_dt
+
+
+def handle_audio_upload_logic(file, overlap_action="trim"):
     if not os.path.exists(AUDIO_DIRECTORY):
         os.makedirs(AUDIO_DIRECTORY, exist_ok=True)
 
-    filename = secure_filename(file.filename)
+    filename   = secure_filename(file.filename)
     final_path = os.path.join(AUDIO_DIRECTORY, filename)
-    temp_path = os.path.join(AUDIO_DIRECTORY, f"temp_{filename}")
+    temp_path  = os.path.join(AUDIO_DIRECTORY, f"temp_{filename}")
 
     try:
-        # 1. Save as TEMP file first to read the date
+        # 1. Save as TEMP file first to read metadata
         file.save(temp_path)
 
-        # 2. Get the Date/Time (Metadata) from the file
+        # 2. Get start/end timestamps from file
         metadata = extract_audio_metadata(temp_path)
         if not metadata or 'start_timestamp' not in metadata:
             raise Exception("Could not read date from file.")
 
-        # Convert Unix timestamp to MySQL format (YYYY-MM-DD HH:MM:SS)
-        formatted_time = format_timestamp(metadata['start_timestamp'])
-        mysql_start_time = formatted_time['timestamp']
+        formatted_start = format_timestamp(metadata['start_timestamp'])
+        formatted_end   = format_timestamp(metadata['end_timestamp'])
+        mysql_start     = formatted_start['timestamp']
+        mysql_end       = formatted_end['timestamp']
 
-        # ---------------------------------------------------------
-        # 3. CHECK DUPLICATES: "Kollar andra filer om har samma datum"
-        # ---------------------------------------------------------
-        old_file_path = delete_audio_by_start_time(mysql_start_time)
-
+        # 3. Remove exact duplicate (same start_time) -- original behaviour unchanged
+        old_file_path = delete_audio_by_start_time(mysql_start)
         if old_file_path:
             print(f"Duplicate found! Removing old file: {old_file_path}")
-            # Remove the OLD file from the computer folder
             if os.path.exists(old_file_path):
                 os.remove(old_file_path)
 
-        # ---------------------------------------------------------
-        # 4. SAVE NEW: "Laddar upp"
-        # ---------------------------------------------------------
-        
-        # Prepare metadata for final save
-        metadata['filepath'] = final_path
-        metadata['filename'] = filename
-        
-        # Save to Database
+        # NEW: OVERLAP - step 4: resolve any overlapping recordings
+        # Pure DB approach -- no audio files are modified on disk (except in
+        # overwrite mode where the earlier file is explicitly deleted).
+        new_start_dt = datetime.strptime(mysql_start, "%Y-%m-%d %H:%M:%S")
+        new_end_dt   = datetime.strptime(mysql_end,   "%Y-%m-%d %H:%M:%S")
+
+        overlap_results, new_end_dt = _resolve_overlaps(
+            new_start_dt  = new_start_dt,
+            new_end_dt    = new_end_dt,
+            action        = overlap_action,
+        )
+
+        # 5. Insert into DB (end_time may have been clamped by overlap resolution)
+        metadata['filepath']      = final_path
+        metadata['filename']      = filename
+        metadata['end_timestamp'] = int(new_end_dt.timestamp())  # NEW: OVERLAP - use resolved end_time
+
         success, db_result = insert_audio_data(metadata)
         if not success:
             raise Exception(db_result)
 
-        # Rename Temp file to Final filename
+        # 6. Rename temp -> final only after DB insert succeeds
         if os.path.exists(final_path):
-            os.remove(final_path) # Safety check
+            os.remove(final_path)
         os.rename(temp_path, final_path)
 
-        return True, {"id": db_result, "filename": filename}
+        return True, {
+            "id":       db_result,
+            "filename": filename,
+            "overlaps": overlap_results,  # NEW: OVERLAP - empty list = no conflict
+        }
 
     except Exception as e:
-        # If anything fails, delete the temp file
         if os.path.exists(temp_path):
             os.remove(temp_path)
         return False, str(e)

@@ -82,18 +82,46 @@ def format_for_frontend(data):
 # =================
 # AUDIO PROCESSING
 # =================
-
+DEFAULT_FALLBACK_DURATION = 300
 def is_allowed_file(filename):
     ALLOWED_EXTENSIONS = {'mp3', 'wav', 'ogg', 'flac'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+#================================
+# OVERLAPPING AUDIOFILE HANDLING
+#================================
+
+DEFAULT_FALLBACK_DURATION = 300
+
+def _get_duration(tag, file_path):
+    """
+    Returns the audio duration in seconds.
+    Uses TinyTag's value when valid, otherwise falls back to 300s (5 min).
+    """
+    if tag.duration and tag.duration > 1:
+        return tag.duration
+    # NEW: OVERLAP - fallback: mock FLACs report 0 duration, default to 5 minutes
+    print(f"Warning: tag.duration missing or too small for '{os.path.basename(file_path)}', "
+        f"defaulting to {DEFAULT_FALLBACK_DURATION}s ({DEFAULT_FALLBACK_DURATION//60} min).")
+    return DEFAULT_FALLBACK_DURATION
+
+def parse_timestamp_from_filename(filename):
+    cleaned = os.path.splitext(os.path.basename(filename))[0]
+    match = re.search(r'(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})', cleaned)
+    if match:
+        y, mo, d = int(match.group(1)), int(match.group(2)), int(match.group(3))
+        h, mi, s = int(match.group(4)), int(match.group(5)), int(match.group(6))
+        return datetime(y, mo, d, h, mi, s)
+    return None
+
+
 def extract_audio_metadata(file_path):
     try:
-        # check if exists
         if not os.path.exists(file_path):
             print(f"File not found - {file_path}")
             return None
-        
+
         tag = TinyTag.get(file_path)
         filename = os.path.basename(file_path)
         timestamp = None
@@ -105,24 +133,26 @@ def extract_audio_metadata(file_path):
         if match:
             year, month, day = int(match.group(1)), int(match.group(2)), int(match.group(3))
             hour, minute, second = int(match.group(4)), int(match.group(5)), int(match.group(6))
-
-            # create date and convert to unix
-            date = datetime(year, month, day, hour, minute, second)
-            timestamp = int(date.timestamp())
+            dt = datetime(year, month, day, hour, minute, second)
+            timestamp = int(dt.timestamp())
         else:
             print(f"Unable to extract filename from file: {filename}")
 
+        # NEW: OVERLAP - use _get_duration() which defaults to 5 min for mock FLACs
+        duration = _get_duration(tag, file_path)
+
         return {
-            'filename': filename,
-            'duration': tag.duration,
-            'filepath': os.path.abspath(file_path),
+            'filename':        filename,
+            'duration':        duration,
+            'filepath':        os.path.abspath(file_path),
             'start_timestamp': timestamp,
-            'end_timestamp': timestamp + int(tag.duration) if timestamp else None    
+            'end_timestamp':   timestamp + int(duration) if timestamp else None
         }
-    
+
     except Exception as e:
         print(f"Error reading audio file {file_path}: {e}")
         return None
+
     
 
 def extract_batch_metadata(audio_directory=None):

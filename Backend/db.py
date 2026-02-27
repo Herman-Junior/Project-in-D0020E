@@ -194,6 +194,65 @@ def delete_audio_by_start_time(formatted_start_time):
             
     return old_file_path
 
+
+#===================
+# AUDIO OVERLAPPING
+#===================
+
+def find_overlapping_recordings(mysql_start_time, mysql_end_time):
+    with db_session(dict_cursor=True) as conn:
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, start_time, end_time, file_path
+                FROM AUDIO_RECORDING
+                WHERE is_deleted = 0
+                AND start_time < %s
+                AND end_time   > %s
+            """, (mysql_end_time, mysql_start_time))
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"find_overlapping_recordings error: {e}")
+            return []
+
+
+def check_overlap_by_filename_start(mysql_start_time):
+    with db_session(dict_cursor=True) as conn:
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, start_time, end_time, file_path
+                FROM AUDIO_RECORDING
+                WHERE is_deleted = 0
+                AND start_time <= %s
+                AND end_time   >  %s
+            """, (mysql_start_time, mysql_start_time))
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"check_overlap_by_filename_start error: {e}")
+            return []
+
+def update_audio_end_time(audio_id, new_mysql_end_time):
+    with db_session() as conn:
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE AUDIO_RECORDING SET end_time = %s WHERE id = %s",
+                (new_mysql_end_time, audio_id)
+            )
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"update_audio_end_time error: {e}")
+            return False
+
+
 # =================
 # Soft deletion
 # =================

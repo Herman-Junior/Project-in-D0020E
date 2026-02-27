@@ -12,7 +12,8 @@ from services import (
     get_latest_sensor_data,    
     get_latest_weather_data,   
     get_combined_data,         
-    handle_audio_upload_logic
+    handle_audio_upload_logic,
+    check_audio_overlap_logic
 )
 from data_loader import process_csv_file
 from utils import is_allowed_file, format_for_frontend
@@ -118,6 +119,15 @@ def get_audio_environmental_api():
         
     return jsonify(data), 200
 
+#===========
+# OVERLAPP
+#===========
+def check_audio_overlap_api():
+    data = request.get_json()
+    if not data or 'filename' not in data:
+        return jsonify({"error": "filename required"}), 400
+    result = check_audio_overlap_logic(data['filename'])
+    return jsonify(result), 200
 
 #--- Delete batch API --- #
 def batch_delete_api():
@@ -218,47 +228,63 @@ def upload_csv_file():
 
 def upload_audio_metadata():
     """
-    Saves file and extracts metadata
+    Saves file and extracts metadata.
+    Form fields:
+        file           - the audio file
+        overlap_action - "trim" (default) | "overwrite"   <-- NEW: OVERLAP
     """
     if 'file' not in request.files:
         return jsonify({"error": "No file"}), 400
-    
     file = request.files['file']
-    success, result = handle_audio_upload_logic(file)
-    
+
+    # NEW: OVERLAP - read the action chosen in the popup
+    overlap_action = request.form.get('overlap_action', 'trim')
+    if overlap_action not in ('trim', 'overwrite'):
+        overlap_action = 'trim'
+
+    success, result = handle_audio_upload_logic(file, overlap_action=overlap_action)
     if not success:
         return jsonify({"error": result}), 500
-    
+
     return jsonify({
-        "status": "success",
+        "status":   "success",
         "audio_id": result['id'],
-        "message": "Metadata extracted, file saved"
+        "message":  "Metadata extracted, file saved",
+        "overlaps": result.get('overlaps', []),  # NEW: OVERLAP - resolution details
     })
 
-def upload_audio_api(): 
+
+# NEW: OVERLAP - overlap_action form field added
+def upload_audio_api():
     """
     API endpoint to handle audio uploads.
+
+    trim:The earlier file's end_time is updated in the DB to the exact
+        moment the newer file begins. No files deleted or modified on disk.
+        overwrite: The earlier file is deleted from disk and its DB row removed.
     """
     if 'file' not in request.files:
         return jsonify({"status": "error", "message": "No file part in the request"}), 400
-    
     file = request.files['file']
-    
     if file.filename == '':
         return jsonify({"status": "error", "message": "No file selected"}), 400
-    
     if not is_allowed_file(file.filename):
         return jsonify({"status": "error", "message": "Invalid file type."}), 400
 
-    success, result = handle_audio_upload_logic(file)
-    
+    # NEW: OVERLAP - read the action chosen in the popup
+    overlap_action = request.form.get('overlap_action', 'trim')
+    if overlap_action not in ('trim', 'overwrite'):
+        overlap_action = 'trim'
+
+    success, result = handle_audio_upload_logic(file, overlap_action=overlap_action)
     if not success:
         return jsonify({"status": "error", "message": result}), 500
 
     return jsonify({
-        "status": "success", 
-        "message": f"File '{result['filename']}' successfully processed.",
-        "id": result['id']
+        "status":   "success",
+        "message":  f"File '{result['filename']}' successfully processed.",
+        "id":       result['id'],
+        "overlaps": result.get('overlaps', []),  # NEW: OVERLAP - resolution details
     }), 201
 
     # Serves the static client-side HTML file

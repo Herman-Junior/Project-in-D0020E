@@ -12,30 +12,14 @@
 <div class="upload-area-container">
   <div class="container upload-box" id="csv-upload-box">
     <h2>CSV File Insert</h2>
-
     <form id="csv-upload-form" class="upload-form">
       <div class="drop-zone" id="csv-drop-zone">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          height="64px"
-          viewBox="0 -960 960 960"
-          width="64px"
-          fill="#e3e3e3"
-        >
-          <path
-            d="M200-120q-33 0-56.5-23.5T120-200v-400q0-33 23.5-56.5T200-680h160v80H200v400h560v-400H600v-80h160q33 0 56.5 23.5T840-600v400q0 33-23.5 56.5T760-120H200Zm280-200L320-480l56-56 64 63v-487h80v487l64-63 56 56-160 160Z"
-          />
+        <svg xmlns="http://www.w3.org/2000/svg" height="64px" viewBox="0 -960 960 960" width="64px" fill="#e3e3e3">
+          <path d="M200-120q-33 0-56.5-23.5T120-200v-400q0-33 23.5-56.5T200-680h160v80H200v400h560v-400H600v-80h160q33 0 56.5 23.5T840-600v400q0 33-23.5 56.5T760-120H200Zm280-200L320-480l56-56 64 63v-487h80v487l64-63 56 56-160 160Z"/>
         </svg>
         <p>Drag & Drop CSV Here</p>
-        <input
-          type="file"
-          id="csv-file-input"
-          accept=".csv"
-          multiple
-          style="display: none"
-        />
+        <input type="file" id="csv-file-input" accept=".csv" multiple style="display: none"/>
       </div>
-
       <button type="submit" class="insert-btn">Insert CSV</button>
     </form>
     <div id="csv-status" class="status-message"></div>
@@ -43,33 +27,228 @@
 
   <div class="container upload-box" id="audio-upload-box">
     <h2>Audio File Insert</h2>
-
     <form id="audio-upload-form" class="upload-form">
       <div class="drop-zone" id="audio-drop-zone">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          height="64px"
-          viewBox="0 -960 960 960"
-          width="64px"
-          fill="#e3e3e3"
-        >
-          <path
-            d="M200-120q-33 0-56.5-23.5T120-200v-400q0-33 23.5-56.5T200-680h160v80H200v400h560v-400H600v-80h160q33 0 56.5 23.5T840-600v400q0 33-23.5 56.5T760-120H200Zm280-200L320-480l56-56 64 63v-487h80v487l64-63 56 56-160 160Z"
-          />
+        <svg xmlns="http://www.w3.org/2000/svg" height="64px" viewBox="0 -960 960 960" width="64px" fill="#e3e3e3">
+          <path d="M200-120q-33 0-56.5-23.5T120-200v-400q0-33 23.5-56.5T200-680h160v80H200v400h560v-400H600v-80h160q33 0 56.5 23.5T840-600v400q0 33-23.5 56.5T760-120H200Zm280-200L320-480l56-56 64 63v-487h80v487l64-63 56 56-160 160Z"/>
         </svg>
         <p>Drag & Drop Audio Here</p>
-        <input
-          type="file"
-          id="audio-file-input"
-          accept=".wav,.mp3"
-          multiple
-          style="display: none"
-        />
+        <input type="file" id="audio-file-input" accept=".wav,.mp3" multiple style="display: none"/>
       </div>
-
       <button type="submit" class="insert-btn">Insert Audio</button>
     </form>
     <div id="audio-status" class="status-message"></div>
   </div>
 </div>
+
+
+<!-- NEW: Overlap popup modal -->
+<div id="overlap-modal-backdrop" style="display:none;">
+  <div id="overlap-modal">
+    <p id="overlap-modal-text">
+      These Audiofiles overlap. Do you want to overwrite the old one with the new one?
+    </p>
+    <!-- NEW: Shows which existing file is conflicting -->
+    <div id="overlap-conflict-list"></div>
+    <div id="overlap-modal-buttons">
+      <!-- NEW: Yes = overwrite the old file -->
+      <button id="overlap-yes-btn">Yes, overwrite</button>
+      <!-- NEW: No = cancel the upload -->
+      <button id="overlap-no-btn">No, cancel</button>
+    </div>
+  </div>
+</div>
+<!-- END NEW: popup -->
+
+
+<!-- NEW: Popup styles -->
+<style>
+  #overlap-modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #overlap-modal {
+    background: #1e1e2e;
+    border: 1px solid #3a3a5c;
+    border-radius: 12px;
+    padding: 32px 36px;
+    max-width: 460px; width: 92%;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    color: #e3e3e3;
+    text-align: center;
+  }
+  #overlap-modal-text {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  #overlap-conflict-list {
+    background: #13131f;
+    border: 1px solid #2e2e4a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 24px;
+    font-size: 0.85rem;
+    text-align: left;
+  }
+  .conflict-row { display:flex; flex-direction:column; gap:3px; padding:5px 0; border-bottom:1px solid #2e2e4a; }
+  .conflict-row:last-child { border-bottom:none; padding-bottom:0; }
+  .conflict-filename { color:#7eb6ff; font-weight:600; }
+  .conflict-times    { color:#888; }
+  #overlap-modal-buttons { display:flex; justify-content:center; gap:16px; }
+  #overlap-yes-btn {
+    background: #e05c5c; border: none; color: #fff;
+    padding: 10px 28px; border-radius: 6px;
+    cursor: pointer; font-size: 0.95rem; font-weight: 600;
+  }
+  #overlap-yes-btn:hover { background: #f07070; }
+  #overlap-no-btn {
+    background: transparent; border: 1px solid #3a3a5c; color: #aaa;
+    padding: 10px 28px; border-radius: 6px;
+    cursor: pointer; font-size: 0.95rem;
+  }
+  #overlap-no-btn:hover { border-color: #888; color: #e3e3e3; }
+</style>
+<!-- END NEW: styles -->
+
+
+<!-- NEW: JavaScript -->
+<script>
+(function () {
+  let pendingFiles = [];
+
+  const backdrop     = document.getElementById('overlap-modal-backdrop');
+  const conflictList = document.getElementById('overlap-conflict-list');
+  const yesBtn       = document.getElementById('overlap-yes-btn');
+  const noBtn        = document.getElementById('overlap-no-btn');
+  const audioStatus  = document.getElementById('audio-status');
+  const audioInput   = document.getElementById('audio-file-input');
+  const audioForm    = document.getElementById('audio-upload-form');
+  const audioDrop    = document.getElementById('audio-drop-zone');
+
+  // NEW: "Yes" — overwrite the old file and upload the new one
+  yesBtn.addEventListener('click', () => {
+    backdrop.style.display = 'none';
+    uploadFiles(pendingFiles, 'overwrite');
+  });
+
+  // NEW: "No" — cancel, do nothing
+  noBtn.addEventListener('click', () => {
+    backdrop.style.display = 'none';
+    pendingFiles = [];
+    setStatus('Upload cancelled.', false);
+  });
+
+  function setStatus(msg, isError) {
+    audioStatus.textContent = msg;
+    audioStatus.style.color = isError ? '#e05c5c' : '#7eb6ff';
+  }
+
+  // NEW: populates the popup with the conflicting file's details
+  function showModal(conflicts) {
+    conflictList.innerHTML = '';
+    conflicts.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'conflict-row';
+      row.innerHTML =
+        `<span class="conflict-filename">&#128193; ${c.filename}</span>` +
+        `<span class="conflict-times">${c.start_time.slice(11,19)} &rarr; ${c.end_time.slice(11,19)} &nbsp;(${c.start_time.slice(0,10)})</span>`;
+      conflictList.appendChild(row);
+    });
+    backdrop.style.display = 'flex';
+  }
+
+  // NEW: sends only the filename to the backend — no file upload needed for the check
+  async function checkOverlap(filename) {
+    try {
+      const res = await fetch('/api/v1/audio/check-overlap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename }),
+      });
+      return await res.json();
+    } catch (e) {
+      return { has_overlap: false, conflicts: [] };
+    }
+  }
+
+  // NEW: uploads the file with the chosen overlap_action (overwrite or trim)
+  async function uploadFiles(files, overlap_action) {
+    setStatus(`Uploading ${files.length} file(s)...`, false);
+    let successCount = 0;
+    const errors = [];
+
+    for (const file of files) {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('overlap_action', overlap_action);
+      try {
+        const res  = await fetch('/api/v1/audio', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          successCount++;
+        } else {
+          errors.push(`${file.name}: ${data.message || 'Unknown error'}`);
+        }
+      } catch (e) {
+        errors.push(`${file.name}: network error`);
+      }
+    }
+
+    if (errors.length === 0) {
+      setStatus(`✓ ${successCount} file(s) uploaded successfully.`, false);
+    } else {
+      setStatus(`${successCount} uploaded. Errors: ${errors.join(' | ')}`, true);
+    }
+  }
+
+  // NEW: make drop zone clickable
+  audioDrop.addEventListener('click', () => audioInput.click());
+  audioDrop.addEventListener('dragover', e => { e.preventDefault(); audioDrop.classList.add('dragover'); });
+  audioDrop.addEventListener('dragleave', () => audioDrop.classList.remove('dragover'));
+  audioDrop.addEventListener('drop', e => {
+    e.preventDefault();
+    audioDrop.classList.remove('dragover');
+    audioInput.files = e.dataTransfer.files;
+  });
+
+  // NEW: intercepts the form submit, checks for overlap first
+  audioForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const files = Array.from(audioInput.files);
+    if (files.length === 0) { setStatus('No files selected.', true); return; }
+
+    setStatus('Checking for time conflicts...', false);
+
+    let allConflicts = [];
+    for (const file of files) {
+      const result = await checkOverlap(file.name);
+      if (result.has_overlap) {
+        allConflicts = allConflicts.concat(result.conflicts);
+      }
+    }
+
+    // Deduplicate by id
+    const seen = new Set();
+    allConflicts = allConflicts.filter(c => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id); return true;
+    });
+
+    pendingFiles = files;
+
+    if (allConflicts.length > 0) {
+      showModal(allConflicts); // pause — show popup
+    } else {
+      uploadFiles(files, 'trim'); // no conflict — upload immediately
+    }
+  });
+
+})();
+</script>
+<!-- END NEW: JavaScript -->
+
 {% endblock %}
