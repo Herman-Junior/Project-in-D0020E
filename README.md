@@ -12,7 +12,7 @@ Integrating Sensor and Audio Data Using a Relational Database System
 - [Collaborators](#collaborators)
 
 ---
-Integrating Sensor and Audio Data Using a Relational Database System
+
 ## Project goals and Background
 In engineering systems, collecting and managing data from various sensors and devices is fundamental for monitoring performance, detecting patterns, and supporting decision-making. Different types of data, such as environmental measurements, audio recordings, or sensor outputs, are often generated simultaneously but stored separately. Without an efficient way to organize and relate these datasets, valuable insights can be easily lost. This project focuses on designing and implementing a database system capable of storing, organizing, and linking heterogeneous data sources. The data will include audio recordings, measurements from a weather station such as temperature, wind speed, and air pressure, as well as humidity sensor readings.
 
