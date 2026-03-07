@@ -109,7 +109,7 @@ source venv/bin/activate
 ### 3. Install Python Dependencies
 
 ```bash
-pip install flask pymysql python-dotenv tinytag
+pip install -r Backend/requirements.txt
 ```
 
 ### 4. Set Up the Database
@@ -118,10 +118,6 @@ Open your MySQL client and create a database, then run the schema file found in 
 
 ```sql
 CREATE DATABASE weather_db;
-```
-
-```bash
-mysql -u root -p weather_db < Database/schema.sql
 ```
 
 ### 5. Configure the Application
