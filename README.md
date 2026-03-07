@@ -12,7 +12,7 @@ Integrating Sensor and Audio Data Using a Relational Database System
 - [Collaborators](#collaborators)
 
 ---
-
+Integrating Sensor and Audio Data Using a Relational Database System
 ## Project goals and Background
 In engineering systems, collecting and managing data from various sensors and devices is fundamental for monitoring performance, detecting patterns, and supporting decision-making. Different types of data, such as environmental measurements, audio recordings, or sensor outputs, are often generated simultaneously but stored separately. Without an efficient way to organize and relate these datasets, valuable insights can be easily lost. This project focuses on designing and implementing a database system capable of storing, organizing, and linking heterogeneous data sources. The data will include audio recordings, measurements from a weather station such as temperature, wind speed, and air pressure, as well as humidity sensor readings.
 
@@ -33,10 +33,10 @@ humidity, temperature, timestamp...
 The **goal** is to extract and import these data into the database system rather than uploading the CSV files themselves.
 The software requirements include any communication backend that works, such as Flask, and any reasonable frontend such as Flask combined with HTML and JavaScript.
 
-The project deliverables consist of several components.
-First, the database setup documentation should include a step-by-step guide on how to set up the system, both hardware and software, how data should be collected to be added to the database, and the database EER diagram.
+The project deliverables consist of several components. 
+First, the database setup documentation should include a step-by-step guide on how to set up the system, both hardware and software, how data should be collected to be added to the database, and the database EER diagram. 
 
-Second, the database framework and codebase should provide modular scripts for tasks such as upload, download, and query, along with configuration details and instructions for using the system, including searching for a specific date or audio file.
+Second, the database framework and codebase should provide modular scripts for tasks such as upload, download, and query, along with configuration details and instructions for using the system, including searching for a specific date or audio file. 
 
 Third, a benchmarking and analysis report should describe how the system can run on any computer, specify where audio files are stored, and explain that audio files should be referenced by file paths rather than stored directly in the database. It should also address special cases such as missing audio data associated with certain measurements and multiple audio recordings of different durations, including filtering or prioritizing relevant files within a specific duration range.
 
