@@ -15,8 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. Selection Feedback
         fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                updateStatus(`${fileTypeLabel} selected: ${fileInput.files[0].name}`, false);
+            const count = fileInput.files.length;
+            if (count > 0) {
+                const msg = count === 1 ? fileInput.files[0].name : `${count} files selected`;
+                updateStatus(`${fileTypeLabel}: ${msg}`, false);
             }
         });
 
@@ -42,8 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
         dropZone.addEventListener('drop', (e) => {
             const dt = e.dataTransfer;
             fileInput.files = dt.files;
-            if (fileInput.files.length > 0) {
-                updateStatus(`${fileTypeLabel} dropped: ${fileInput.files[0].name}`, false);
+            const count = fileInput.files.length;
+            if (count > 0) {
+                const msg = count === 1 ? fileInput.files[0].name : `${count} files dropped`;
+                updateStatus(`${fileTypeLabel}: ${msg}`, false);
             }
         }, false);
 
@@ -58,9 +62,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const fileToUpload = fileInput.files[0];
             const formData = new FormData();
-            formData.append('file', fileToUpload);
+            // Loop through all selected files
+                for (let i = 0; i < fileInput.files.length; i++) {
+                    // Use 'files[]' as the key so Flask can recognize it as a list
+                    formData.append('files[]', fileInput.files[i]);
+                }
 
-            updateStatus(`Uploading ${fileToUpload.name}...`, false);
+            updateStatus(`Uploading ${fileInput.files.length} ${fileTypeLabel} files...`, false);
 
             try {
                 const response = await fetch(endpoint, {
@@ -70,22 +78,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const result = await response.json();
 
-                if (response.ok) {
-                    // Custom success message based on file type
-                    const successMsg = result.audio_id 
-                        ? `Audio synced successfully! ID: ${result.audio_id}`
-                        : `Upload successful: ${result.success_count} rows inserted.`;
-                    
-                    updateStatus(successMsg, false);
-                    fileInput.value = ''; // Clear input
-                } else {
-                    updateStatus(`Upload failed: ${result.error || result.message || 'Unknown error'}`, true);
+            if (response.ok) {
+                let successMsg = "";
+                if (result.audio_count !== undefined) {
+                    successMsg = `Successfully synced ${result.audio_count} audio files!`;
+                } 
+                else if (result.audio_id) {
+                    successMsg = `Audio synced successfully! ID: ${result.audio_id}`;
                 }
-            } catch (error) {
-                updateStatus(`Network error: ${error.message}`, true);
+                else if (result.success_count !== undefined) {
+                    successMsg = `Upload successful: ${result.success_count} rows inserted.`;
+                } 
+                else {
+                    successMsg = "Upload successful!";
+                }
+
+                updateStatus(successMsg, false);
+                fileInput.value = ''; // Clear input
+            } else {
+                updateStatus(`Upload failed: ${result.error || result.message || 'Unknown error'}`, true);
             }
-        });
-    };
+        } catch (error) {
+            updateStatus(`Network error: ${error.message}`, true);
+        }
+    });
+}; 
 
     // --- Initialize CSV Upload ---
     setupUploadBox({

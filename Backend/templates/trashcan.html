@@ -2,12 +2,48 @@
 
 {% block title %}Trash Can{% endblock %}
 
+{% block head_links %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/query-styles.css') }}">
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript" src="{{ url_for('static', filename='scripts/trash.js') }}" defer></script>
+{% endblock %}
+
 {% block content %}
 <h1 style="margin-left: 20px;">Trash Can</h1>
 
+    <div class="query-layout-wrapper container" style="margin-bottom: 20px;">
+        <div class="left-controls">
+            <div id="filter-options" style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <div class="control-group">
+                    <label class="control-label">Start Date</label>
+                    <input type="date" id="start-date" class="control-input">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">End Date</label>
+                    <input type="date" id="end-date" class="control-input">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Start Time</label>
+                    <input type="time" id="start-time" class="control-input" step="1">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">End Time</label>
+                    <input type="time" id="end-time" class="control-input" step="1">
+                </div>
+            </div>
+        </div>
+
+        <div class="right-controls" style="display: flex; align-items: flex-end;">
+            <button id="load-audio-btn" class="insert-btn">Load Deleted Items</button>
+        </div>
+    </div>
+
+
 <div class="container upload-box" style="margin-top: 20px; width: 95%; max-width: 1200px; margin-inline: auto;">
     <h2 style="text-align: left; padding-left: 10px; margin-top: -15px;">Deleted Audio Recordings</h2>
-    <div class="trash-list">
+    <div class="trash-list" id="audio-trash-list">
         {% if audio %}
             {% for item in audio %}
             <div class="trash-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #444; gap: 130px; width: 100%; box-sizing: border-box;">
@@ -26,7 +62,7 @@
 
 <div class="container upload-box" style="margin-top: 15px; width: 95%; max-width: 1200px; margin-inline: auto;">
     <h2 style="text-align: left; padding-left: 10px; margin-top: -15px;">Deleted Sensor Data</h2>
-    <div class="trash-list">
+    <div class="trash-list" id="sensor-trash-list">
         {% if sensors %}
             {% for item in sensors %}
             <div class="trash-item" style="display: flex; align-items: center; padding: 12px 20px; border-bottom: 1px solid #444; gap: 130px; width: 100%; box-sizing: border-box;">
@@ -47,7 +83,7 @@
 
 <div class="container upload-box" style="margin-top: 20px; width: 95%; max-width: 1200px; margin-inline: auto;">
     <h2 style="text-align: left; padding-left: 10px; margin-top: -15px;">Deleted Weather Data</h2>
-    <div class="trash-list">
+    <div class="trash-list" id="weather-trash-list">
         {% if weather %}
             {% for item in weather %}
             <div class="trash-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #444; gap: 130px; width: 100%; box-sizing: border-box;">
@@ -64,62 +100,4 @@
     </div>
 </div>
 
-<script>
-async function restoreItems(ids, type) {
-    if (!confirm(`Restore these ${type} items?`)) return;
-    
-    try {
-        const response = await fetch('/api/v1/restore', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: ids, type: type })
-        });
-
-        if (response.ok) {
-            location.reload();
-        } else {
-            alert("Error restoring data.");
-        }
-    } catch (e) {
-        alert("Network error: " + e.message);
-    }
-}
-
-async function updateTimers() {
-    const timerElements = document.querySelectorAll('.timer-display');
-    console.log(`Hittade ${timerElements.length} timers att uppdatera`); // Kolla konsolen!
-
-    timerElements.forEach(el => {
-        const deadlineStr = el.getAttribute('data-deadline');
-        
-        // Om datum saknas eller är "None"
-        if (!deadlineStr || deadlineStr === "None" || deadlineStr === "") {
-            el.innerHTML = "No delete date";
-            return;
-        }
-
-        const deadline = new Date(deadlineStr).getTime();
-        const now = new Date().getTime();
-        const diff = deadline - now;
-
-        if (diff <= 0) {
-            el.innerHTML = "Will be deleted soon...";
-            return;
-        }
-
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-        el.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s left`;
-    });
-}
-
-// Starta timern direkt och kör varje sekund
-updateTimers();
-setInterval(updateTimers, 1000);
-
-
-</script>
 {% endblock %}
