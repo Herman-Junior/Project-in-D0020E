@@ -114,14 +114,4 @@ document.addEventListener('DOMContentLoaded', () => {
         fileTypeLabel: 'CSV'
     });
 
-    // --- Initialize Audio Upload ---
-    setupUploadBox({
-        dropZone: document.getElementById('audio-drop-zone'),
-        fileInput: document.getElementById('audio-file-input'),
-        form: document.getElementById('audio-upload-form'),
-        statusElement: document.getElementById('audio-status'),
-        endpoint: '/api/v1/audio/upload',
-        fileTypeLabel: 'Audio'
-    });
-
 });

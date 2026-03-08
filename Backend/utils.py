@@ -99,14 +99,91 @@ DEFAULT_FALLBACK_DURATION = 300
 def _get_duration(tag, file_path):
     """
     Returns the audio duration in seconds.
-    Uses TinyTag's value when valid, otherwise falls back to 300s (5 min).
+    1. Uses TinyTag's value when valid (> 1s).
+    2. Falls back to counting actual FLAC audio frames from the file data.
+    3. Last resort: returns DEFAULT_FALLBACK_DURATION (300s).
     """
     if tag.duration and tag.duration > 1:
         return tag.duration
-    # NEW: OVERLAP - fallback: mock FLACs report 0 duration, default to 5 minutes
+
+    # Fallback: count real FLAC frames to get actual duration
+    if file_path.lower().endswith('.flac'):
+        try:
+            duration = _get_flac_duration_from_frames(file_path)
+            if duration and duration > 1:
+                print(f"Info: tag.duration was 0 for '{os.path.basename(file_path)}', "
+                      f"calculated real duration from frames: {duration:.1f}s.")
+                return duration
+        except Exception as e:
+            print(f"Warning: frame-count fallback failed for '{os.path.basename(file_path)}': {e}")
+
     print(f"Warning: tag.duration missing or too small for '{os.path.basename(file_path)}', "
-        f"defaulting to {DEFAULT_FALLBACK_DURATION}s ({DEFAULT_FALLBACK_DURATION//60} min).")
+          f"defaulting to {DEFAULT_FALLBACK_DURATION}s ({DEFAULT_FALLBACK_DURATION//60} min).")
     return DEFAULT_FALLBACK_DURATION
+
+
+def _get_flac_duration_from_frames(file_path):
+    """
+    Calculates FLAC duration by counting audio frame block sizes.
+    Used when the STREAMINFO header has total_samples = 0 (common in
+    streamed/interrupted recordings where the header was never finalized).
+    """
+    import struct
+    with open(file_path, 'rb') as f:
+        data = f.read()
+
+    if data[:4] != b'fLaC':
+        return None
+
+    # Parse STREAMINFO to get sample_rate
+    pos = 4
+    sample_rate = None
+    while pos < len(data) - 4:
+        byte0 = data[pos]
+        last_block = (byte0 & 0x80) != 0
+        block_type = byte0 & 0x7F
+        block_len = struct.unpack('>I', b'\x00' + data[pos+1:pos+4])[0]
+
+        if block_type == 0:  # STREAMINFO
+            si = data[pos+4:pos+4+block_len]
+            val = struct.unpack('>Q', si[10:18])[0]
+            sample_rate = (val >> 44) & 0xFFFFF
+            break
+
+        pos += 4 + block_len
+        if last_block:
+            break
+
+    if not sample_rate:
+        return None
+
+    # Skip all metadata blocks to find start of audio frames
+    pos = 4
+    while pos < len(data) - 4:
+        byte0 = data[pos]
+        last_block = (byte0 & 0x80) != 0
+        block_len = struct.unpack('>I', b'\x00' + data[pos+1:pos+4])[0]
+        pos += 4 + block_len
+        if last_block:
+            break
+
+    # Count total samples by scanning frame headers
+    total_samples = 0
+    fp = pos
+    while fp < len(data) - 4:
+        if data[fp] == 0xFF and (data[fp+1] & 0xFE) == 0xF8:
+            bs_code = (data[fp+2] >> 4) & 0xF
+            if   bs_code == 0x1: block_size = 192
+            elif bs_code == 0x2: block_size = 576
+            elif bs_code == 0x3: block_size = 1152
+            elif bs_code == 0x4: block_size = 2304
+            elif bs_code == 0x5: block_size = 4608
+            elif 0x8 <= bs_code <= 0xF: block_size = 256 * (1 << (bs_code - 8))
+            else: block_size = 4096
+            total_samples += block_size
+        fp += 1
+
+    return total_samples / sample_rate if total_samples else None
 
 def parse_timestamp_from_filename(filename):
     cleaned = os.path.splitext(os.path.basename(filename))[0]
@@ -177,4 +254,3 @@ def extract_batch_metadata(audio_directory=None):
             if metadata:
                 metadata_list.append(metadata)
     return metadata_list
-
