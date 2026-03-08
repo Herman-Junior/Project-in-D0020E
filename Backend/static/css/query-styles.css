@@ -182,7 +182,9 @@
 
 .data-table {
     width: 100%;
+    table-layout: fixed; /* Fixes the width to the container */
     border-collapse: collapse;
+    word-wrap: break-word; /* Prevents long text from pushing the table out */
 }
 .data-table th, .data-table td {
     padding: 12px 15px;
@@ -225,15 +227,14 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    white-space: nowrap; 
+    table-layout: fixed; 
 }
 
 .data-table th:first-child, 
 .data-table td:first-child {
-    width: 4% !important;        /* Tells it to be as small as possible */
+    width: 133px !important;
     white-space: nowrap;
-    padding: 12px 0 12px 15px !important; /* Removes right-side dead space */
-    text-align: center;
+    padding: 12px 8px 12px 15px !important;
 }
 
 
