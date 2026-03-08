@@ -5,10 +5,10 @@ load_dotenv()
 # --- DATABASE CONFIG ---
 # Inside Docker, 'host' must match the service name in docker-compose.yml
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'Rodendren12',
-    'database': 'WEATHER_DB'
+    'host': os.getenv('DB_HOST', 'db'), 
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD'), 
+    'database': os.getenv('DB_NAME')
 }
 
 # --- FOLDER PATHS ---
