@@ -44,6 +44,32 @@
     </div>
 
 
+        <div id="bulk-actions-container" class="container" style="display: none; margin-bottom: 10px;">
+        <button id="delete-selected-btn" class="insert-btn" style="background-color: #00c8ff;">
+        Delete selected (<span id="selected-count">0</span>)
+        </button>
+        <button id="download-audio-btn" class="insert-btn" type="button" style="display: flex; align-items: center; gap: 6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor">
+                <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
+            </svg>
+            Download ZIP
+        </button>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     <div class="audio-list-container" id="audio-results-container">
         {% if recordings %}
             {% for record in recordings %}
@@ -72,11 +98,7 @@
         {% endif %}
     </div>
 
-    <div id="bulk-actions-container" class="container" style="display: none; margin-bottom: 10px;">
-        <button id="delete-selected-btn" class="insert-btn" style="background-color: #00c8ff;">
-            Delete selected (<span id="selected-count">0</span>)
-        </button>
-    </div>
+
 
     <div id="correlation-panel" class="container upload-box" style="display: none; margin-top: 30px;">
         <h2 id="selected-audio-title">Correlated Data</h2>

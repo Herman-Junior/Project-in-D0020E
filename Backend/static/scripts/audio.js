@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsContainer = document.getElementById('audio-results-container');
     const bulkContainer = document.getElementById('bulk-actions-container');
     const selectedCountSpan = document.getElementById('selected-count');
+    const downloadAudioBtn = document.getElementById('download-audio-btn');
 
     // --- 1. INITIALIZATION ---
     
@@ -19,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loadAudioBtn) {
         loadAudioBtn.addEventListener('click', fetchFilteredAudio);
     }
+
+    
+    if (downloadAudioBtn) {
+        downloadAudioBtn.addEventListener('click', downloadSelectedAudio);
+}
 
     // Run once on page load to bind existing items (rendered by Jinja)
     attachItemListeners();
@@ -203,3 +209,48 @@ document.addEventListener('DOMContentLoaded', () => {
         content.innerHTML = html; 
     }
 });
+
+    // ----7. Download zips-------
+
+async function downloadSelectedAudio() {
+    const checked = document.querySelectorAll('.delete-checkbox:checked');
+    const selectedIds = Array.from(checked).map(cb => cb.getAttribute('data-id'));
+
+    if (selectedIds.length === 0) {
+        alert('No recordings selected.');
+        return;
+    }
+
+    // Show loading feedback on the button
+    const btn = document.getElementById('download-audio-btn');
+    const originalText = btn.innerHTML;
+    btn.textContent = 'Preparing download...';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/v1/audio/export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: selectedIds })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Export failed');
+        }
+
+        const blob = await response.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `audio_export_${selectedIds.length}_recordings.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+    } catch (e) {
+        alert('Download failed: ' + e.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled  = false;
+    }
+}

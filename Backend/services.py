@@ -362,11 +362,14 @@ def handle_audio_upload_logic(file, overlap_action="trim"):
             if os.path.exists(old_file_path):
                 os.remove(old_file_path)
 
+
+        # Build mysql_end_time from metadata end_timestamp
+        formatted_end  = format_timestamp(metadata["end_timestamp"])
+        mysql_end_time = formatted_end["timestamp"]
+
         # NEW: OVERLAP - step 4: resolve any overlapping recordings
-        # Pure DB approach -- no audio files are modified on disk (except in
-        # overwrite mode where the earlier file is explicitly deleted).
-        new_start_dt = datetime.strptime(mysql_start, "%Y-%m-%d %H:%M:%S")
-        new_end_dt   = datetime.strptime(mysql_end,   "%Y-%m-%d %H:%M:%S")
+        new_start_dt = datetime.strptime(mysql_start_time, "%Y-%m-%d %H:%M:%S")
+        new_end_dt   = datetime.strptime(mysql_end_time,   "%Y-%m-%d %H:%M:%S")
 
         overlap_results, new_end_dt = _resolve_overlaps(
             new_start_dt  = new_start_dt,

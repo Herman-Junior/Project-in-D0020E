@@ -6,7 +6,7 @@ from config import *
 # Import the route handlers (index, get_sensor_api, and get_weather_api)
 from routes import(export_csv_api, filter_trash_api, get_audio_api, index, get_sensor_api, get_weather_api, get_combined_api, 
                    upload_csv_file, upload_audio_metadata, insert_page, query_page, 
-                   audio_page, trash_page, get_audio_environmental_api, audio_details_page, batch_delete_api, restore_api, check_audio_overlap_api,upload_audio_api  )
+                   audio_page, trash_page, get_audio_environmental_api, audio_details_page, batch_delete_api, restore_api, check_audio_overlap_api,upload_audio_api, export_audio_zip_api)
 
 app = Flask(__name__, 
             template_folder=TEMPLATE_FOLDER_PATH,
@@ -32,6 +32,9 @@ app.add_url_rule('/api/v1/audio/upload', 'upload_audio_metadata',
 app.add_url_rule('/api/v1/audio/environmental', 'get_audio_with_environmental_api', 
                 get_audio_environmental_api)
 app.add_url_rule('/api/v1/audio', 'upload_audio_api', upload_audio_api, methods=['POST'])
+
+app.add_url_rule('/api/v1/audio/export', 'export_audio_zip_api', 
+                 export_audio_zip_api, methods=['POST'])
 
 # NEW: pre-upload overlap check — JS sends the filename here before uploading the file
 app.add_url_rule('/api/v1/audio/check-overlap', 'check_audio_overlap_api', check_audio_overlap_api, methods=['POST'])

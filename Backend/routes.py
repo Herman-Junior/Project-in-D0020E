@@ -1,14 +1,15 @@
 # backend/routes.py
 from flask import jsonify, render_template, request
-from db import view_deleted_audio_data, view_deleted_sensor_data, view_deleted_weather_data
+from db import view_deleted_audio_data, view_deleted_sensor_data, view_deleted_weather_data, db_session
 from datetime import timedelta, date, datetime
 
+import zipfile
 import os
 import csv
 import io
 from flask import Response
 from datetime import datetime
-
+from flask import send_file
 
 
 # Internal project imports
@@ -395,4 +396,78 @@ def export_csv_api():
         output.getvalue(),
         mimetype='text/csv',
         headers={'Content-Disposition': f'attachment; filename={filename}'}
+    ) 
+
+
+
+#----------DOWNLOAD ZIP-----------------
+
+def export_audio_zip_api():
+    data = request.get_json()
+    ids = data.get('ids', [])
+    if not ids:
+        return jsonify({'error': 'No IDs provided'}), 400
+
+    zip_buffer = io.BytesIO()
+
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for audio_id in ids:
+            env_data = get_audio_environmental_data_logic(audio_id)
+
+            with db_session(dict_cursor=True) as conn:
+                if not conn:
+                    continue
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT file_path FROM AUDIO_RECORDING WHERE id = %s", (audio_id,)
+                )
+                record = cursor.fetchone()
+
+            if not record:
+                continue
+
+            file_path = record['file_path']
+            filename  = os.path.basename(file_path)
+            base_name = os.path.splitext(filename)[0]
+
+            if os.path.exists(file_path):
+                zf.write(file_path, f"{base_name}/{filename}")
+
+            csv_buffer = io.StringIO()
+            writer = csv.writer(csv_buffer)
+            writer.writerow([f'# Recording: {filename}'])
+            writer.writerow([])
+
+            sensor_data = env_data.get('sensor_data', [])
+            writer.writerow(['## Sensor Data'])
+            if sensor_data:
+                writer.writerow(sensor_data[0].keys())
+                for row in sensor_data:
+                    writer.writerow(row.values())
+            else:
+                writer.writerow(['No sensor data found'])
+            writer.writerow([])
+
+            weather_data = env_data.get('weather_data', [])
+            writer.writerow(['## Weather Data'])
+            if weather_data:
+                writer.writerow(weather_data[0].keys())
+                for row in weather_data:
+                    writer.writerow(row.values())
+            else:
+                writer.writerow(['No weather data found'])
+
+            zf.writestr(
+                f"{base_name}/{base_name}_correlated.csv",
+                csv_buffer.getvalue()
+            )
+
+    
+    zip_buffer.seek(0)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    return send_file(
+        zip_buffer,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=f"audio_export_{timestamp}.zip"
     )
