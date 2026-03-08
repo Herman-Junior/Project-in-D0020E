@@ -33,7 +33,7 @@
           <path d="M200-120q-33 0-56.5-23.5T120-200v-400q0-33 23.5-56.5T200-680h160v80H200v400h560v-400H600v-80h160q33 0 56.5 23.5T840-600v400q0 33-23.5 56.5T760-120H200Zm280-200L320-480l56-56 64 63v-487h80v487l64-63 56 56-160 160Z"/>
         </svg>
         <p>Drag & Drop Audio Here</p>
-        <input type="file" id="audio-file-input" accept=".wav,.mp3" multiple style="display: none"/>
+        <input type="file" id="audio-file-input" accept=".wav,.mp3,.flac" multiple style="display: none"/>
       </div>
       <button type="submit" class="insert-btn">Insert Audio</button>
     </form>
@@ -143,7 +143,7 @@
 
   function setStatus(msg, isError) {
     audioStatus.textContent = msg;
-    audioStatus.style.color = isError ? '#e05c5c' : '#7eb6ff';
+    audioStatus.style.color = isError ? '#e05c5c' : 'var(--secondary-text-clr)';
   }
 
   // NEW: populates the popup with the conflicting file's details
@@ -204,7 +204,33 @@
     }
   }
 
-  // NEW: make drop zone clickable
+  // Show filename when file is selected
+  audioInput.addEventListener('change', () => {
+    const count = audioInput.files.length;
+    if (count > 0) {
+      const msg = count === 1 ? audioInput.files[0].name : `${count} files selected`;
+      setStatus(`Audio: ${msg}`, false);
+    }
+  });
+
+  // Show selected filename(s) in status
+  audioInput.addEventListener('change', () => {
+    const count = audioInput.files.length;
+    if (count === 1) setStatus(audioInput.files[0].name, false);
+    else if (count > 1) setStatus(`${count} files selected`, false);
+  });
+
+  // Show selected filename(s) when user picks files
+  audioInput.addEventListener('change', () => {
+    const count = audioInput.files.length;
+    if (count > 0) {
+      const msg = count === 1 ? audioInput.files[0].name : `${count} files selected`;
+      setStatus(`Audio: ${msg}`, false);
+    }
+  });
+
+  // make drop zone clickable — stopPropagation prevents double picker
+  audioInput.addEventListener('click', (e) => e.stopPropagation());
   audioDrop.addEventListener('click', () => audioInput.click());
   audioDrop.addEventListener('dragover', e => { e.preventDefault(); audioDrop.classList.add('dragover'); });
   audioDrop.addEventListener('dragleave', () => audioDrop.classList.remove('dragover'));
