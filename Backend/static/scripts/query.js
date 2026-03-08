@@ -134,6 +134,9 @@ toggleBtn.addEventListener('click', () => {
 });
 
     function updateActionMenu() {
+
+        if(dataSelect.value === 'combined') return;
+
         const selected = document.querySelectorAll('.row-checkbox:checked');
         const container = document.getElementById('bulk-actions-container');
         const countSpan = document.getElementById('selected-count');
@@ -152,6 +155,8 @@ toggleBtn.addEventListener('click', () => {
     function renderTable(data, targetElement) {
         targetElement.innerHTML = ''; 
 
+        const iscombined = dataSelect.value === 'combined';
+
         // 1. Define the order of data columns
         const mandatoryHeaders = ['date', 'time']; 
         const allHeaders = Object.keys(data[0]).filter(h => h !== 'id');
@@ -161,7 +166,9 @@ toggleBtn.addEventListener('click', () => {
         let tableHTML = '<div class="table-container"><table class="data-table"><thead><tr>';
         
         // HEADER: First column is the checkbox
+        if (!iscombined){
         tableHTML += '<th class="checkbox-col"><input type="checkbox" id="select-all-rows"></th>';
+        }
 
         // HEADER: Following columns are Date, Time, etc.
         headers.forEach(header => {
@@ -175,9 +182,11 @@ toggleBtn.addEventListener('click', () => {
             tableHTML += '<tr>';
             
             // CELL: First column MUST be the checkbox to match the header
+            if (!iscombined){
             const rowId = row.sensor_id || row.weather_id || row.id || ""; 
             tableHTML += `<td class="checkbox-col"><input type="checkbox" class="row-checkbox" value="${rowId}"></td>`;
-
+            }
+            
             // CELL: Following columns
             headers.forEach(header => {
                 const cellValue = row[header] !== undefined && row[header] !== null ? row[header] : 'N/A';
