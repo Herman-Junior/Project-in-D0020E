@@ -2,13 +2,19 @@
 /* --- 1. LAYOUT WRAPPER (HEADER SPACE) ---    */
 /* ------------------------------------------- */
 
+/* Fix grid overflow: main expands to fit content by default.
+   min-width: 0 forces it to respect its 1fr column boundary. */
+main {
+    min-width: 0;
+}
+
 .query-layout-wrapper {
     display: flex;
-    justify-content: space-between; 
-    align-items: flex-start; /* Keeps the right-side button from dropping when filters open */
+    justify-content: space-between;
+    align-items: flex-start;
     padding: 20px;
     gap: 20px;
-    margin-top: 60px; /* Increased space from page header */
+    margin-top: 60px;
     border: 1px solid var(--line-clr);
     border-radius: 1em;
 }
@@ -16,7 +22,7 @@
 /* LEFT COLUMN: Dropdown + Expanding Filters */
 .left-controls {
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
     gap: 15px;
     flex-grow: 1;
 }
@@ -25,7 +31,7 @@
 .main-row {
     display: flex;
     flex-direction: row;
-    align-items: flex-end; 
+    align-items: flex-end;
     gap: 15px;
 }
 
@@ -33,7 +39,7 @@
 .right-controls {
     display: flex;
     align-items: flex-start;
-    padding-top: 25px; /* Aligns button with the Select box baseline */
+    padding-top: 25px;
 }
 
 /* ------------------------------------------- */
@@ -76,37 +82,32 @@
 #toggle-filters-btn {
     width: fit-content;
     padding: 0 15px;
-    flex-grow: 0; 
+    flex-grow: 0;
     flex-shrink: 0;
-    
-    /* COOL GREY (Not Brown) */
-    background-color: #2a2d3e !important; 
+    background-color: #2a2d3e !important;
     color: var(--text-clr);
     border: 1px solid var(--line-clr);
-    
     font-size: 0.9em;
-    
-    height: 42px; 
+    height: 42px;
     margin: 0 !important;
 }
 
-#load-data-btn {
-    /* Tell it to only be as wide as the text inside */
-    width: fit-content; 
-    padding: 0 20px;
-    
-    /* Ensure it doesn't try to grow to fill the row */
-    flex-grow: 0; 
-    flex-shrink: 0;
-    
-    /* Keep the height consistent with the dropdown */
-    height: 42px; 
+#toggle-filters-btn:hover {
+    background-color: #383b52;
 }
 
-#toggle-filters-btn {
-    background-color: #2a2d3e !important; /* Deep navy-grey */
-    color: var(--text-clr);
-    border: 1px solid var(--line-clr);
+#load-data-btn {
+    width: fit-content;
+    min-width: 150px;
+    padding: 0 25px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 42px;
+    background-color: var(--accent-clr);
+}
+
+#load-data-btn:hover {
+    background-color: #7b80ff;
 }
 
 #download-csv-btn {
@@ -119,37 +120,13 @@
     background-color: var(--accent-clr);
 }
 
-
-
-#toggle-filters-btn:hover {
-    background-color: #383b52; /* Slightly lighter on hover */
-}
-
-#load-data-btn {
-    min-width: 150px;
-    padding: 0 25px;
-    background-color: var(--accent-clr);
-}
-
-#load-data-btn:hover {
+#download-csv-btn:hover {
     background-color: #7b80ff;
 }
 
 .secondary-btn {
     background-color: #444;
-
 }
-
-
-
-
-#download-csv-btn:hover {
-    background-color: #7b80ff;
-}
-
-
-
-
 
 /* ------------------------------------------- */
 /* --- 4. FILTER OPTIONS (EXPANDABLE) ---      */
@@ -172,29 +149,31 @@
 
 .table-container {
     width: 100%;
-    max-height: 70vh; 
-    overflow-y: auto; 
-    overflow-x: auto; 
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: auto;
     margin-top: 10px;
-    border: 1px solid var(--line-clr); 
-    border-radius: 1em; 
+    border: 1px solid var(--line-clr);
+    border-radius: 1em;
 }
 
 .data-table {
     width: 100%;
-    table-layout: fixed; /* Fixes the width to the container */
+    table-layout: auto;
     border-collapse: collapse;
-    word-wrap: break-word; /* Prevents long text from pushing the table out */
+    white-space: nowrap;
 }
-.data-table th, .data-table td {
+
+.data-table th,
+.data-table td {
     padding: 12px 15px;
     text-align: left;
 }
 
 /* Header Styling - Sticky to the top of the container */
 .data-table thead th {
-    background-color: var(--hover-clr); 
-    color: var(--accent-clr); 
+    background-color: var(--hover-clr);
+    color: var(--accent-clr);
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.85em;
@@ -210,33 +189,25 @@
 }
 
 .data-table tbody tr:nth-child(even) {
-    background-color: var(--hover-clr); 
+    background-color: var(--hover-clr);
 }
 
 .data-table tbody tr:hover {
     background-color: #33364f;
 }
 
-/* Column Highlighting (Restored) */
 .data-table td {
     color: var(--secondary-text-clr);
     font-size: 0.95em;
 }
 
-/* 3. Ensure the table doesn't force extra space */
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed; 
-}
-
-.data-table th:first-child, 
+/* Checkbox column — shrink to just fit the checkbox */
+.data-table th:first-child,
 .data-table td:first-child {
-    width: 133px !important;
-    white-space: nowrap;
-    padding: 12px 8px 12px 15px !important;
+    width: 1px;
+    padding: 12px 12px;
+    text-align: center;
 }
-
 
 /* ------------------------------------------- */
 /* --- 6. STATUS MESSAGES ---                  */
