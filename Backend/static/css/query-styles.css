@@ -202,10 +202,12 @@ main {
 }
 
 /* Checkbox column — shrink to just fit the checkbox */
-.data-table th:first-child,
-.data-table td:first-child {
-    width: 1px;
-    padding: 12px 12px;
+.data-table th.checkbox-col,
+.data-table td.checkbox-col {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    padding: 12px 8px;
     text-align: center;
 }
 
