@@ -109,6 +109,12 @@ source venv/bin/activate
 ### 3. Install Python Dependencies
 
 ```bash
+make install
+```
+
+Or manually:
+
+```bash
 pip install -r Backend/requirements.txt
 ```
 
@@ -136,7 +142,7 @@ DB_CONFIG = {
 ### 6. Run the Application
 
 ```bash
-python -m Backend.app
+make run
 ```
 
 The application will be available at **http://localhost:5000**
